@@ -1,0 +1,16 @@
+{
+    "folders": [
+      {
+        "path": "src/Altinn.Dan.Plugin.Arbeidstilsynet"
+      },
+      {
+        "path": "test/Altinn.Dan.Plugin.Arbeidstilsynet.Test"
+      }
+    ],
+    "extensions": {
+      "recommendations": [
+        "ms-dotnettools.csharp",
+        "github.vscode-pull-request-github"
+      ]
+    }
+}

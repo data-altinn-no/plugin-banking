@@ -8,6 +8,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nadobe;
+using Nadobe.Common.Exceptions;
 using Nadobe.Common.Models;
 using Nadobe.Common.Util;
 using Newtonsoft.Json;
@@ -53,27 +54,37 @@ namespace Altinn.Dan.Plugin.Banking
         {
             var mpToken = GetToken();
             var kar = new KAR(_client);
-            kar.BaseUrl = "https://preprod.api.bits.no/kar-ws/api/v1";
-            var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken);
+            kar.BaseUrl = _settings.KarUrl;
 
-            if (response.Banks.Count == 0)
-                return new List<EvidenceValue>();
-
-            string bankList = null;
-            foreach (var a in response.Banks)
+            try
             {
-                bankList += $"{a.OrganizationID}:{a.BankName};";
+                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken);
+
+                if (response.Banks.Count == 0)
+                    return new List<EvidenceValue>();
+
+                string bankList = null;
+                foreach (var a in response.Banks)
+                {
+                    bankList += $"{a.OrganizationID}:{a.BankName};";
+                }
+
+                var banks = bankList.TrimEnd(';');
+
+                var bank = new Bank(_client);
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings);
+                
+                var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
+
+                return ecb.GetEvidenceValues();
+            } catch (Exception e)
+            {
+                _logger.LogError(String.Format("Banktransaksjoner failed for {0}, error {1}",
+                    evidenceHarvesterRequest.OrganizationNumber.Length == 11 ? evidenceHarvesterRequest.OrganizationNumber.Substring(0, 6) : evidenceHarvesterRequest.OrganizationNumber, e.Message));
+                throw new EvidenceSourceTransientException(Altinn.Dan.Plugin.Banking.Metadata.ERROR_CCR_UPSTREAM_ERROR, "Could not retrieve bank transactions");
+
             }
-
-            var banks = bankList.TrimEnd(';');
-
-            var bank = new Bank(_client);
-            var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings);
-
-            var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
-            ecb.AddEvidenceValue("default", bankResult);
-
-            return ecb.GetEvidenceValues();
         }
 
         private string GetToken(string audience = null)

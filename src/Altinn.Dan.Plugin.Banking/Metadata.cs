@@ -12,7 +12,7 @@ namespace Altinn.Dan.Plugin.Banking
 
         public const int ERROR_ORGANIZATION_NOT_FOUND = 1;
 
-        public const int ERROR_CCR_UPSTREAM_ERROR = 2;
+        public static int ERROR_CCR_UPSTREAM_ERROR = 2;
   
 
         public List<EvidenceCode> GetEvidenceCodes()

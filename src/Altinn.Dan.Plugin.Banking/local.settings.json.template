@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "IsTest": "",
+    "IsDevelopment": "",
+    "Breaker_RetryWaitTime": "",
+    "Breaker_OpenCircuitTime": "",
+    "SBankenUri": "",
+    "SBankenAudience": "",
+    "KeyvaultSSLCrtificate": ""
+  }
+
+}

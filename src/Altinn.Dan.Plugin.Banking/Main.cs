@@ -32,7 +32,7 @@ namespace Altinn.Dan.Plugin.Banking
             _settings = settings.Value;
         }
 
-        [Function("BankTransaksjoner")]
+        [Function("Banktransaksjoner")]
         public async Task<HttpResponseData> Dataset1(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req,
             FunctionContext context)

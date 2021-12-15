@@ -70,7 +70,7 @@ namespace Altinn.Dan.Plugin.Banking
             var bank = new Bank(_client);
             var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings);
 
-            var ecb = new EvidenceBuilder(new Metadata(), "BankTransaksjoner");
+            var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
             ecb.AddEvidenceValue("default", bankResult);
 
             return ecb.GetEvidenceValues();

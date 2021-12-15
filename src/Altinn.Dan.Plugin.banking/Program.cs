@@ -1,21 +1,25 @@
 using System;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Altinn.Dan.Plugin.DATASOURCENAME.Config;
+using Altinn.Dan.Plugin.Banking.Config;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Nadobe.Common.Util.Certificate;
 using Polly;
 using Polly.Caching.Distributed;
 using Polly.Extensions.Http;
 using Polly.Registry;
 
-namespace Altinn.Dan.Plugin.DATASOURCENAME
+namespace Altinn.Dan.Plugin.Banking
 {
     class Program
     {
-        private static IApplicationSettings ApplicationSettings { get; set; }
+        private static ApplicationSettings ApplicationSettings { get; set; }
 
         private static Task Main(string[] args)
         {
@@ -24,12 +28,11 @@ namespace Altinn.Dan.Plugin.DATASOURCENAME
                 .ConfigureServices(services =>
                 {
                     services.AddLogging();
-                    services.AddHttpClient();
+                    services.AddHttpClient();                                
 
-                    services.AddSingleton<IApplicationSettings, ApplicationSettings>();
-                    services.AddSingleton<EvidenceSourceMetadata>();
-
-                    ApplicationSettings = services.BuildServiceProvider().GetRequiredService<IApplicationSettings>();
+                    services.AddOptions<ApplicationSettings>()
+                                            .Configure<IConfiguration>((settings, configuration) => configuration.Bind(settings));
+                    ApplicationSettings = services.BuildServiceProvider().GetRequiredService<IOptions<ApplicationSettings>>().Value;
 
                     services.AddStackExchangeRedisCache(option => { option.Configuration = ApplicationSettings.RedisConnectionString; });
 
@@ -39,7 +42,7 @@ namespace Altinn.Dan.Plugin.DATASOURCENAME
                         { "defaultCircuitBreaker", HttpPolicyExtensions.HandleTransientHttpError().CircuitBreakerAsync(4, ApplicationSettings.Breaker_RetryWaitTime) },
                         { "CachePolicy", Policy.CacheAsync(distributedCache.AsAsyncCacheProvider<string>(), TimeSpan.FromHours(12)) }
                     };
-                    services.AddPolicyRegistry(registry);
+                    services.AddPolicyRegistry(registry);                      
 
                     // Client configured with circuit breaker policies
                     services.AddHttpClient("SafeHttpClient", client => { client.Timeout = new TimeSpan(0, 0, 30); })
@@ -53,6 +56,19 @@ namespace Altinn.Dan.Plugin.DATASOURCENAME
                         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                         options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                         options.Converters.Add(new JsonStringEnumConverter());
+                    });
+
+                    // Client with enterprise certificate authentication
+                    services.AddHttpClient("ECHttpClient", client =>
+                    {
+                        client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    })
+                    .AddPolicyHandlerFromRegistry("defaultCircuitBreaker")                   
+                    .ConfigurePrimaryHttpMessageHandler(() =>
+                    {
+                        var handler = new HttpClientHandler();
+                        handler.ClientCertificates.Add(ApplicationSettings.Certificate);
+                        return handler;
                     });
                 })
                 .Build();

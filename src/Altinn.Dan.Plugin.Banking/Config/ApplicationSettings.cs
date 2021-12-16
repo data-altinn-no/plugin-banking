@@ -11,6 +11,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
     {
         public static ApplicationSettings ApplicationConfig;
         private static X509Certificate2 _altinnCertificate;
+        private static X509Certificate2 _oedDecryptCert;
 
         public ApplicationSettings()
         {
@@ -82,6 +83,8 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public string MaskinportenEndpoint { get; set; }
 
+        public static string DecryptCert { get; set; }
+
         public X509Certificate2 Certificate
         {
             get
@@ -96,7 +99,17 @@ namespace Altinn.Dan.Plugin.Banking.Config
                 _altinnCertificate = value;
             }
         }
-
+        public X509Certificate2 OedDecryptCert
+        {
+            get
+            {
+                return _oedDecryptCert ?? new CoreKeyVault(ApplicationSettings.KeyVaultName, ApplicationSettings.KeyVaultClientId, ApplicationSettings.KeyVaultClientSecret).GetCertificate(ApplicationSettings.DecryptCert).Result;
+            }
+            set
+            {
+                _oedDecryptCert = value;
+            }
+        }
 
     }
 }

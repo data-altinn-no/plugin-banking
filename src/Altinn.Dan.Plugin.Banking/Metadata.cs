@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using Altinn.Dan.Plugin.Banking.Config;
+using Altinn.Dan.Plugin.Banking.Models;
 using Nadobe.Common.Interfaces;
 using Nadobe.Common.Models;
 using Nadobe.Common.Models.Enums;
+using Newtonsoft.Json;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -30,7 +32,8 @@ namespace Altinn.Dan.Plugin.Banking
                         new EvidenceValue()
                         {
                             EvidenceValueName = "default",
-                            ValueType = EvidenceValueType.JsonSchema
+                            ValueType = EvidenceValueType.JsonSchema,
+                            JsonSchemaDefintion = JsonConvert.SerializeObject(new BankResponse())
                         }
                     },
                     AuthorizationRequirements = new List<Requirement>()

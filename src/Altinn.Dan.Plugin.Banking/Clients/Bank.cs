@@ -38,12 +38,13 @@ namespace Altinn.Dan.Plugin.Banking.Clients
         {
             if (response.IsSuccessStatusCode)
             {
-                
-                X509Certificate2 certificate = null;
-                string decryptedResponse = JWT.Decode(response.Content.ReadAsStringAsync().Result, certificate.GetRSAPrivateKey(), JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
+                string decryptedResponse = string.Empty;            
+ 
 
                 try
                 {
+                    decryptedResponse = JWT.Decode(response.Content.ReadAsStringAsync().Result, _danSettings.OedDecryptCert.GetRSAPrivateKey(), JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
+
                     if (response.RequestMessage.RequestUri.LocalPath.EndsWith("accounts", StringComparison.OrdinalIgnoreCase))
                         _accounts = Newtonsoft.Json.JsonConvert.DeserializeObject<Accounts>(decryptedResponse, JsonSerializerSettings);
                     else if (response.RequestMessage.RequestUri.LocalPath.EndsWith("transactions", StringComparison.OrdinalIgnoreCase))

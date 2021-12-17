@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Altinn.Dan.Plugin.Banking.Config;
+using Microsoft.ApplicationInsights.DependencyCollector;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +30,14 @@ namespace Altinn.Dan.Plugin.Banking
                 .ConfigureServices(services =>
                 {
                     services.AddLogging();
-                    services.AddHttpClient();                                
+                    services.AddHttpClient();
+
+                    DependencyTrackingTelemetryModule depModule = new DependencyTrackingTelemetryModule();
+                    depModule.Initialize(TelemetryConfiguration.Active);
+
+                //services.AddHostedService<Worker>();
+                // services.AddApplicationInsightsTelemetryWorkerService();
+
 
                     services.AddOptions<ApplicationSettings>()
                                             .Configure<IConfiguration>((settings, configuration) => configuration.Bind(settings));

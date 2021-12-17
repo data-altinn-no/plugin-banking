@@ -3,7 +3,6 @@ using Altinn.Dan.Plugin.Banking.Exceptions;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Utils;
 using Jose;
-using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

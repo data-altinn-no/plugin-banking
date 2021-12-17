@@ -34,7 +34,6 @@ namespace Altinn.Dan.Plugin.Banking
 
                     // See https://docs.microsoft.com/en-us/azure/azure-monitor/app/worker-service#using-application-insights-sdk-for-worker-services
                     services.AddApplicationInsightsTelemetryWorkerService();
-                    services.BuildServiceProvider().GetRequiredService<TelemetryClient>();
 
                     services.AddHttpClient();
                     services.AddOptions<ApplicationSettings>()

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Altinn.Dan.Plugin.Banking.Config;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Caching.Distributed;
@@ -30,15 +31,12 @@ namespace Altinn.Dan.Plugin.Banking
                 .ConfigureServices(services =>
                 {
                     services.AddLogging();
+
+                    // See https://docs.microsoft.com/en-us/azure/azure-monitor/app/worker-service#using-application-insights-sdk-for-worker-services
+                    services.AddApplicationInsightsTelemetryWorkerService();
+                    services.BuildServiceProvider().GetRequiredService<TelemetryClient>();
+
                     services.AddHttpClient();
-
-                    DependencyTrackingTelemetryModule depModule = new DependencyTrackingTelemetryModule();
-                    depModule.Initialize(TelemetryConfiguration.Active);
-
-                //services.AddHostedService<Worker>();
-                // services.AddApplicationInsightsTelemetryWorkerService();
-
-
                     services.AddOptions<ApplicationSettings>()
                                             .Configure<IConfiguration>((settings, configuration) => configuration.Bind(settings));
                     ApplicationSettings = services.BuildServiceProvider().GetRequiredService<IOptions<ApplicationSettings>>().Value;

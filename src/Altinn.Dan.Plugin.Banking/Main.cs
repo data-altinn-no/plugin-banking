@@ -75,7 +75,10 @@ namespace Altinn.Dan.Plugin.Banking
                 var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings);
                 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
-                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult, new JsonSerializerSettings
+                {
+                    DefaultValueHandling = DefaultValueHandling.Ignore
+                }));
 
                 return ecb.GetEvidenceValues();
             } catch (Exception e)

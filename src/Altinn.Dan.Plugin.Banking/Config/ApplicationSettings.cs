@@ -67,6 +67,11 @@ namespace Altinn.Dan.Plugin.Banking.Config
         {
             get { return Environment.GetEnvironmentVariable("SBankenURI");  }
         }
+
+        public string Sparebank1Uri
+        {
+            get { return Environment.GetEnvironmentVariable("Sparebank1Uri"); }
+        }
         public string BankAudience 
         {
             get { return Environment.GetEnvironmentVariable("BankAudience"); }
@@ -84,6 +89,10 @@ namespace Altinn.Dan.Plugin.Banking.Config
         public string MaskinportenEndpoint { get; set; }
 
         public static string DecryptCert { get; set; }
+
+        public string Sparebank1Audience { get; set; }
+
+        public string SBankenAudience { get; set; }
 
         public X509Certificate2 Certificate
         {

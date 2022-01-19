@@ -58,7 +58,10 @@ namespace Altinn.Dan.Plugin.Banking
 
             try
             {
-                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken);
+                string toDate = DateTime.Now.ToString("yyyy-MM-dd");
+                string fromDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd");
+
+                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate);
 
                 if (response.Banks.Count == 0)
                     return new List<EvidenceValue>();
@@ -72,7 +75,7 @@ namespace Altinn.Dan.Plugin.Banking
                 var banks = bankList.TrimEnd(';');
 
                 var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings);
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate));
                 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));

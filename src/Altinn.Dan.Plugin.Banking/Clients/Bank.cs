@@ -42,7 +42,11 @@ namespace Altinn.Dan.Plugin.Banking.Clients
 
                 try
                 {
-                    decryptedResponse = JWT.Decode(response.Content.ReadAsStringAsync().Result, _danSettings.OedDecryptCert.GetRSAPrivateKey(), JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
+                    var jwt = response.Content.ReadAsStringAsync().Result;
+
+                    decryptedResponse = JWT.Decode(response.Content.ReadAsStringAsync().Result, _danSettings.OedDecryptCert.GetRSAPrivateKey());//, JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
+
+                    
 
                     if (response.RequestMessage.RequestUri.LocalPath.EndsWith("accounts", StringComparison.OrdinalIgnoreCase))
                         _accounts = Newtonsoft.Json.JsonConvert.DeserializeObject<Accounts>(decryptedResponse, JsonSerializerSettings);
@@ -63,7 +67,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             }
         }
 
-        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings)
+        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate)
         {
             _danSettings = settings;
             Configure();
@@ -76,7 +80,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                 BankInfo bankInfo = null;
                 try
                 {
-                    bankInfo = await InvokeBank(ssn, orgnr);
+                    bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate);
                 }
                 catch (Exception e)
                 {
@@ -91,20 +95,20 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             return bankResponse;
         }
 
-        private async Task<BankInfo> InvokeBank(string ssn, string orgnr)
+        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate)
         {
             if (!_bankConfigs.ContainsKey(orgnr))
                 return new BankInfo { IsImplemented = false };
 
             BankConfig bankConfig = _bankConfigs[orgnr];
             _httpClient = bankConfig.Client;
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new MaskinportenUtil(bankConfig.BankUri, "bits:kontoinformasjon.oed", _danSettings.ClientId,
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new MaskinportenUtil(bankConfig.BankAudience, "bits:kontoinformasjon.oed", _danSettings.ClientId,
                 false, bankConfig.MaskinportenAudience, _danSettings.Certificate, _danSettings.MaskinportenEndpoint, null).GetToken());
 
-            BaseUrl = "/exec.dsop/api/v1";
+            BaseUrl = bankConfig.Client.BaseAddress.ToString();
             try
             {
-                await this.ListAccountsAsync(Guid.NewGuid(), Guid.NewGuid(), "OED", ssn, null, null, null, null, null);
+                await this.ListAccountsAsync(Guid.NewGuid(), Guid.NewGuid(), "OED", ssn, null, null, null, fromDate, toDate);
             }
             catch (DecryptionCompletedDummyException)
             {
@@ -167,14 +171,65 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     {
                         _bankConfigs = new Dictionary<string, BankConfig>();
 
+                        //sbanken
                         _bankConfigs.Add("915287700", new BankConfig()
                         {
                             BankUri = _danSettings.SBankenURI,
+                            BankAudience  = _danSettings.SBankenAudience,
                             MaskinportenUri = _danSettings.MaskinportenEndpoint, 
                             MaskinportenAudience = _danSettings.BankAudience,
                             Client = new HttpClient() { BaseAddress = new Uri(_danSettings.SBankenURI) }
                         });
-                        // Add more banks here
+
+                        //sparebank1 nordnorge
+                        _bankConfigs.Add("952706365", new BankConfig()
+                        {
+                            BankUri = _danSettings.Sparebank1Uri,
+                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "952706365"),
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                            MaskinportenAudience = _danSettings.BankAudience,
+                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "952706365")) }
+                        });
+
+                        //sparebank1 hadeland
+                        _bankConfigs.Add("937889275", new BankConfig()
+                        {
+                            BankUri = _danSettings.Sparebank1Uri,
+                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937889275"),
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                            MaskinportenAudience = _danSettings.BankAudience,
+                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937889275")) }
+                        });
+
+                        //Sparebank1 smn
+                        _bankConfigs.Add("937901003", new BankConfig()
+                        {
+                            BankUri = _danSettings.Sparebank1Uri,
+                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937901003"),
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                            MaskinportenAudience = _danSettings.BankAudience,
+                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937901003")) }
+                        });
+
+                        //Sparebank1 sr-bank asa
+                        _bankConfigs.Add("937895321", new BankConfig()
+                        {
+                            BankUri = _danSettings.Sparebank1Uri,
+                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937895321"),
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                            MaskinportenAudience = _danSettings.BankAudience,
+                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937895321")) }
+                        });
+
+                        //Sparebank1 østlandet
+                        _bankConfigs.Add("920426530", new BankConfig()
+                        {
+                            BankUri = _danSettings.Sparebank1Uri,
+                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "920426530"),
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                            MaskinportenAudience = _danSettings.BankAudience,
+                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "920426530")) }
+                        });
                     }
         }     
     }
@@ -189,5 +244,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
         public string MaskinportenUri { get; set; }
         public string MaskinportenAudience { get; set; }
         public HttpClient Client { get; set; }
+
+        public string BankAudience { get; set; }
     }
 }

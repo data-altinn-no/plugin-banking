@@ -83,8 +83,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate);
                 }
                 catch (Exception e)
-                {
-                    bankInfo = new BankInfo() { Exception = e };
+                {                   
+                    bankInfo = new BankInfo() { Exception = new Exception(e.Message) };
                 }
 
                 bankInfo.BankName = name;

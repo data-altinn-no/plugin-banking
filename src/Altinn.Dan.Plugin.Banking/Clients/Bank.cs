@@ -15,11 +15,13 @@ using System.Threading.Tasks;
 
 namespace Altinn.Dan.Plugin.Banking.Clients
 {
-    public partial class Bank 
+    public partial class Bank
     {
         private Accounts _accounts = null;
         private AccountDetails _details = null;
         private Transactions _transactions = null;
+        private Guid _accountInfoRequestID;
+        private Guid _correlationID;
 
         private static Dictionary<string, BankConfig> _bankConfigs = null;
         private static object _lockObject = new object();
@@ -37,8 +39,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients
         {
             if (response.IsSuccessStatusCode)
             {
-                string decryptedResponse = string.Empty;            
- 
+                string decryptedResponse = string.Empty;
+
 
                 try
                 {
@@ -46,7 +48,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
 
                     decryptedResponse = JWT.Decode(response.Content.ReadAsStringAsync().Result, _danSettings.OedDecryptCert.GetRSAPrivateKey());//, JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
 
-                    
+
 
                     if (response.RequestMessage.RequestUri.LocalPath.EndsWith("accounts", StringComparison.OrdinalIgnoreCase))
                         _accounts = Newtonsoft.Json.JsonConvert.DeserializeObject<Accounts>(decryptedResponse, JsonSerializerSettings);
@@ -67,9 +69,11 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             }
         }
 
-        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate)
+        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID)
         {
             _danSettings = settings;
+            _accountInfoRequestID = accountInfoRequestID;
+            _correlationID = correlationID;
             Configure();
 
             BankResponse bankResponse = new BankResponse() { BankAccounts = new List<BankInfo>() };
@@ -83,7 +87,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate);
                 }
                 catch (Exception e)
-                {                   
+                {
                     bankInfo = new BankInfo() { Exception = new Exception(e.Message) };
                 }
 
@@ -108,7 +112,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             BaseUrl = bankConfig.Client.BaseAddress.ToString();
             try
             {
-                await this.ListAccountsAsync(Guid.NewGuid(), Guid.NewGuid(), "OED", ssn, null, null, null, fromDate, toDate);
+                await this.ListAccountsAsync(_accountInfoRequestID, _correlationID, "OED", ssn, null, null, null, fromDate, toDate);
             }
             catch (DecryptionCompletedDummyException)
             {
@@ -125,7 +129,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             {
                 try
                 {
-                    await this.ShowAccountByIdAsync(account.AccountReference, Guid.NewGuid(), Guid.NewGuid(), "OED", null, null, null, null);
+                    await this.ShowAccountByIdAsync(account.AccountReference, _accountInfoRequestID, _correlationID, "OED", null, null, null, null);
                 }
                 catch (DecryptionCompletedDummyException)
                 {
@@ -133,7 +137,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     var debit = _details.Account.Balances.FirstOrDefault(b => b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)?.Amount ?? 0;
                     try
                     {
-                        await this.ListTransactionsAsync(account.AccountReference, Guid.NewGuid(), Guid.NewGuid(), "OED", null, null, DateTime.Now.AddMonths(-3), DateTime.Now);
+                        await this.ListTransactionsAsync(account.AccountReference, _accountInfoRequestID, _correlationID, "OED", null, null, DateTime.Now.AddMonths(-3), DateTime.Now);
                     }
                     catch (DecryptionCompletedDummyException)
                     {
@@ -174,11 +178,11 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //sbanken
                         _bankConfigs.Add("915287700", new BankConfig()
                         {
-                            BankUri = _danSettings.SBankenURI,
-                            BankAudience  = _danSettings.SBankenAudience,
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint, 
+                            BankUri = _danSettings.SBankenUri,
+                            BankAudience = _danSettings.SBankenAudience,
+                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(_danSettings.SBankenURI) }
+                            Client = new HttpClient() { BaseAddress = new Uri(_danSettings.SBankenUri) }
                         });
 
                         //sparebank1 nordnorge
@@ -231,7 +235,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                             Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "920426530")) }
                         });
                     }
-        }     
+        }
     }
 
     class DecryptionCompletedDummyException : Exception

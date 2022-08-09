@@ -26,6 +26,8 @@ namespace Altinn.Dan.Plugin.Banking
         private ILogger _logger;
         private HttpClient _client;
         private ApplicationSettings _settings;
+        private Guid _accountInfoRequestID = Guid.NewGuid();
+        private Guid _correlationID = Guid.NewGuid();
 
         public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings)
         {
@@ -61,7 +63,7 @@ namespace Altinn.Dan.Plugin.Banking
                 string toDate = DateTime.Now.ToString("yyyy-MM-dd");
                 string fromDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd");
 
-                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate);
+                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate, _accountInfoRequestID, _correlationID);
 
                 if (response.Banks.Count == 0)
                     return new List<EvidenceValue>();
@@ -75,16 +77,17 @@ namespace Altinn.Dan.Plugin.Banking
                 var banks = bankList.TrimEnd(';');
 
                 var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate));
-                
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID);
+
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
 
                 return ecb.GetEvidenceValues();
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                _logger.LogError(String.Format("Banktransaksjoner failed for {0}, error {1}",
-                    evidenceHarvesterRequest.OrganizationNumber.Length == 11 ? evidenceHarvesterRequest.OrganizationNumber.Substring(0, 6) : evidenceHarvesterRequest.OrganizationNumber, e.Message));
+                _logger.LogError(String.Format("Banktransaksjoner failed for {0}, error {1} (accountInfoRequestID: {2}, correlationID: {3})",
+                    evidenceHarvesterRequest.OrganizationNumber.Length == 11 ? evidenceHarvesterRequest.OrganizationNumber.Substring(0, 6) : evidenceHarvesterRequest.OrganizationNumber, e.Message, _accountInfoRequestID, _correlationID));
                 throw new EvidenceSourceTransientException(Altinn.Dan.Plugin.Banking.Metadata.ERROR_CCR_UPSTREAM_ERROR, "Could not retrieve bank transactions");
 
             }
@@ -93,7 +96,7 @@ namespace Altinn.Dan.Plugin.Banking
         private string GetToken(string audience = null)
         {
             var mp = new MaskinportenUtil(audience, "bits:kundeforhold", _settings.ClientId, false, "https://ver2.maskinporten.no/", _settings.Certificate, "https://ver2.maskinporten.no/", null);
-            return mp.GetToken();           
+            return mp.GetToken();
         }
 
 
@@ -105,7 +108,7 @@ namespace Altinn.Dan.Plugin.Banking
             _logger = context.GetLogger(context.FunctionDefinition.Name);
             _logger.LogInformation($"Running metadata for {Constants.EvidenceSourceMetadataFunctionName}");
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new Metadata().GetEvidenceCodes(), new NewtonsoftJsonObjectSerializer(new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto}));
+            await response.WriteAsJsonAsync(new Metadata().GetEvidenceCodes(), new NewtonsoftJsonObjectSerializer(new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto }));
             return response;
         }
     }

@@ -7,7 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Altinn.Dan.Plugin.Banking.Config
 {
-    public class ApplicationSettings 
+    public class ApplicationSettings
     {
         public static ApplicationSettings ApplicationConfig;
         private static X509Certificate2 _altinnCertificate;
@@ -63,16 +63,16 @@ namespace Altinn.Dan.Plugin.Banking.Config
             get { return Convert.ToBoolean(Environment.GetEnvironmentVariable("IsDevelopment")); }
         }
 
-        public string SBankenURI
+        public string SBankenUri
         {
-            get { return Environment.GetEnvironmentVariable("SBankenURI");  }
+            get { return Environment.GetEnvironmentVariable("SBankenUri"); }
         }
 
         public string Sparebank1Uri
         {
             get { return Environment.GetEnvironmentVariable("Sparebank1Uri"); }
         }
-        public string BankAudience 
+        public string BankAudience
         {
             get { return Environment.GetEnvironmentVariable("BankAudience"); }
         }
@@ -84,7 +84,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public static string KeyVaultClientSecret { get; set; }
 
-        public string ClientId { get;  set; }
+        public string ClientId { get; set; }
 
         public string MaskinportenEndpoint { get; set; }
 
@@ -98,7 +98,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
         {
             get
             {
-                if (IsDevelopment || IsUnitTest) 
+                if (IsDevelopment || IsUnitTest)
                     return _altinnCertificate ?? X509Certificate2Helper.GenerateSelfSignedCertificate();
                 else
                     return _altinnCertificate ?? new CoreKeyVault(ApplicationSettings.KeyVaultName, ApplicationSettings.KeyVaultClientId, ApplicationSettings.KeyVaultClientSecret).GetCertificate(ApplicationSettings.KeyVaultSslCertificate).Result;

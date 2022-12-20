@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Models;
-using Nadobe.Common.Interfaces;
-using Nadobe.Common.Models;
-using Nadobe.Common.Models.Enums;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using Dan.Common.Enums;
+using Dan.Common.Interfaces;
+using Dan.Common.Models;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -15,7 +14,7 @@ namespace Altinn.Dan.Plugin.Banking
         public const int ERROR_ORGANIZATION_NOT_FOUND = 1;
 
         public static int ERROR_CCR_UPSTREAM_ERROR = 2;
-  
+
 
         public List<EvidenceCode> GetEvidenceCodes()
         {
@@ -34,6 +33,21 @@ namespace Altinn.Dan.Plugin.Banking
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
                             JsonSchemaDefintion = JsonConvert.SerializeObject(new BankResponse())
+                        }
+                    },
+                    Parameters = new List<EvidenceParameter>()
+                    {
+                        new EvidenceParameter()
+                        {
+                            EvidenceParamName = "FraDato",
+                            ParamType = EvidenceParamType.DateTime,
+                            Required = false
+                        },
+                        new EvidenceParameter()
+                        {
+                            EvidenceParamName = "TilDato",
+                            ParamType = EvidenceParamType.DateTime,
+                            Required = false
                         }
                     },
                     AuthorizationRequirements = new List<Requirement>()

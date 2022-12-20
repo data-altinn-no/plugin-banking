@@ -1,9 +1,6 @@
-using Altinn.Dan.Plugin.banking.Exceptions;
-using Microsoft.Extensions.Configuration;
-using Nadobe.Common.Util.Certificate;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using Dan.Plugin.Banking;
 
 namespace Altinn.Dan.Plugin.Banking.Config
 {
@@ -41,11 +38,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
         public string KarUrl
         {
             get { return Environment.GetEnvironmentVariable("KarUrl"); }
-        }
-
-        public string DATASETNAME2URL
-        {
-            get { return Environment.GetEnvironmentVariable("DATASETNAME2URL"); }
         }
 
         public string[] BankUrls
@@ -98,10 +90,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
         {
             get
             {
-                if (IsDevelopment || IsUnitTest)
-                    return _altinnCertificate ?? X509Certificate2Helper.GenerateSelfSignedCertificate();
-                else
-                    return _altinnCertificate ?? new CoreKeyVault(ApplicationSettings.KeyVaultName, ApplicationSettings.KeyVaultClientId, ApplicationSettings.KeyVaultClientSecret).GetCertificate(ApplicationSettings.KeyVaultSslCertificate).Result;
+                return _altinnCertificate ?? new PluginKeyVault(ApplicationSettings.KeyVaultName).GetCertificate(ApplicationSettings.KeyVaultSslCertificate).Result;
             }
             set
             {
@@ -112,7 +101,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
         {
             get
             {
-                return _oedDecryptCert ?? new CoreKeyVault(ApplicationSettings.KeyVaultName, ApplicationSettings.KeyVaultClientId, ApplicationSettings.KeyVaultClientSecret).GetCertificate(ApplicationSettings.DecryptCert).Result;
+                return _oedDecryptCert ?? new PluginKeyVault(ApplicationSettings.KeyVaultName).GetCertificate(ApplicationSettings.DecryptCert).Result;
             }
             set
             {

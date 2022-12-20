@@ -2,22 +2,21 @@ using Altinn.Dan.Plugin.Banking.Clients;
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Utils;
 using Azure.Core.Serialization;
-using Microsoft.AspNetCore.Mvc;
+using Dan.Common;
+using Dan.Common.Exceptions;
+using Dan.Common.Models;
+using Dan.Common.Util;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nadobe;
-using Nadobe.Common.Exceptions;
-using Nadobe.Common.Models;
-using Nadobe.Common.Util;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dan.Common.Extensions;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -32,24 +31,23 @@ namespace Altinn.Dan.Plugin.Banking
         public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings)
         {
             _client = httpClientFactory.CreateClient("SafeHttpClient");
+
+            //adjust for frequent KAR timeouts
+            _client.Timeout = new TimeSpan(0, 0, 10, 30);
             _settings = settings.Value;
         }
 
         [Function("Banktransaksjoner")]
-        public async Task<HttpResponseData> Dataset1(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req,
+        public async Task<HttpResponseData> GetBanktransaksjoner(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
         {
             _logger = context.GetLogger(context.FunctionDefinition.Name);
             _logger.LogInformation("Running func 'BankTransaksjoner'");
 
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var evidenceHarvesterRequest = JsonConvert.DeserializeObject<EvidenceHarvesterRequest>(requestBody);
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
-            var actionResult = await EvidenceSourceResponse.CreateResponse(null, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest)) as ObjectResult;
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(actionResult?.Value);
-            return response;
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesBankTransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
@@ -58,12 +56,32 @@ namespace Altinn.Dan.Plugin.Banking
             var kar = new KAR(_client);
             kar.BaseUrl = _settings.KarUrl;
 
+
             try
             {
-                string toDate = DateTime.Now.ToString("yyyy-MM-dd");
-                string fromDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd");
+                string fromDate;
+                string toDate;
+
+                if (evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramDate))
+                {
+                    fromDate = paramDate.ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    fromDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd");
+                }
+
+                if (evidenceHarvesterRequest.TryGetParameter("TilDato", out paramDate))
+                {
+                    toDate = paramDate.ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    toDate = DateTime.Now.ToString("yyyy-MM-dd");
+                }
 
                 var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate, _accountInfoRequestID, _correlationID);
+
 
                 if (response.Banks.Count == 0)
                     return new List<EvidenceValue>();
@@ -77,7 +95,7 @@ namespace Altinn.Dan.Plugin.Banking
                 var banks = bankList.TrimEnd(';');
 
                 var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID);
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
@@ -103,7 +121,7 @@ namespace Altinn.Dan.Plugin.Banking
 
         [Function(Constants.EvidenceSourceMetadataFunctionName)]
         public async Task<HttpResponseData> Metadata(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequestData req, FunctionContext context)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, FunctionContext context)
         {
             _logger = context.GetLogger(context.FunctionDefinition.Name);
             _logger.LogInformation($"Running metadata for {Constants.EvidenceSourceMetadataFunctionName}");

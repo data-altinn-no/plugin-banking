@@ -1,6 +1,6 @@
-using Nadobe.Common.Models.Enums;
 using System;
-using Nadobe.Common.Exceptions;
+using Dan.Common.Enums;
+using Dan.Common.Exceptions;
 
 namespace Altinn.Dan.Plugin.Banking.Exceptions
 {
@@ -9,7 +9,7 @@ namespace Altinn.Dan.Plugin.Banking.Exceptions
     /// <summary>
     /// Invalid Certificate Exception
     /// </summary>
-    public class InvalidCertificateException : NadobeException
+    public class InvalidCertificateException : DanException
     {
         /// <inheritdoc />
         public override string DefaultErrorMessage => "There was an error with the provided client certificate";

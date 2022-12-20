@@ -2,11 +2,11 @@ using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Exceptions;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Utils;
+using Dan.Common.Exceptions;
 using Jose;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -69,7 +69,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             }
         }
 
-        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID)
+        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID, ILogger logger)
         {
             _danSettings = settings;
             _accountInfoRequestID = accountInfoRequestID;
@@ -88,7 +88,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                 }
                 catch (Exception e)
                 {
-                    bankInfo = new BankInfo() { Exception = new Exception(e.Message) };
+                    bankInfo = new BankInfo() { Exception = e };
+                    logger.LogError(String.Format("Banktransaksjoner failed for {0}, error {1} (accountInfoRequestID: {2}, correlationID: {3})", ssn.Substring(0, 6), e.Message, _accountInfoRequestID, _correlationID));
                 }
 
                 bankInfo.BankName = name;
@@ -119,7 +120,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                 return await GetAccountDetails(_accounts);
             }
 
-            throw new Exception($"Code bug calling list accounts for {ssn}");
+            throw new EvidenceSourceTransientException(Metadata.ERROR_CCR_UPSTREAM_ERROR, $"Code bug calling list accounts for {ssn}");
         }
 
         private async Task<BankInfo> GetAccountDetails(Accounts accounts)
@@ -188,7 +189,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //sparebank1 nordnorge
                         _bankConfigs.Add("952706365", new BankConfig()
                         {
-                            BankUri = _danSettings.Sparebank1Uri,
+                            BankUri = string.Format(_danSettings.Sparebank1Uri, "952706365"),
                             BankAudience = string.Format(_danSettings.Sparebank1Audience, "952706365"),
                             MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,
@@ -198,7 +199,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //sparebank1 hadeland
                         _bankConfigs.Add("937889275", new BankConfig()
                         {
-                            BankUri = _danSettings.Sparebank1Uri,
+                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937889275"),
                             BankAudience = string.Format(_danSettings.Sparebank1Audience, "937889275"),
                             MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,
@@ -208,7 +209,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //Sparebank1 smn
                         _bankConfigs.Add("937901003", new BankConfig()
                         {
-                            BankUri = _danSettings.Sparebank1Uri,
+                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937901003"),
                             BankAudience = string.Format(_danSettings.Sparebank1Audience, "937901003"),
                             MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,
@@ -218,7 +219,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //Sparebank1 sr-bank asa
                         _bankConfigs.Add("937895321", new BankConfig()
                         {
-                            BankUri = _danSettings.Sparebank1Uri,
+                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937895321"),
                             BankAudience = string.Format(_danSettings.Sparebank1Audience, "937895321"),
                             MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,
@@ -228,7 +229,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         //Sparebank1 østlandet
                         _bankConfigs.Add("920426530", new BankConfig()
                         {
-                            BankUri = _danSettings.Sparebank1Uri,
+                            BankUri = string.Format(_danSettings.Sparebank1Uri, "920426530"),
                             BankAudience = string.Format(_danSettings.Sparebank1Audience, "920426530"),
                             MaskinportenUri = _danSettings.MaskinportenEndpoint,
                             MaskinportenAudience = _danSettings.BankAudience,

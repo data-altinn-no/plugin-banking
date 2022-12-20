@@ -15,6 +15,8 @@ namespace Altinn.Dan.Plugin.Banking
 
         public static int ERROR_CCR_UPSTREAM_ERROR = 2;
 
+        public static int ERROR_METADATA_LOOKUP_ERROR = 3;
+
 
         public List<EvidenceCode> GetEvidenceCodes()
         {

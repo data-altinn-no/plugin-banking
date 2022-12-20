@@ -69,12 +69,12 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             }
         }
 
-        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID, ILogger logger)
+        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID, ILogger logger, KontoOpplysninger endpoints)
         {
             _danSettings = settings;
             _accountInfoRequestID = accountInfoRequestID;
             _correlationID = correlationID;
-            Configure();
+            Configure(endpoints);
 
             BankResponse bankResponse = new BankResponse() { BankAccounts = new List<BankInfo>() };
             foreach (string bank in bankList.Split(';'))
@@ -168,7 +168,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             };
         }
 
-        private void Configure()
+        private void Configure(KontoOpplysninger banks)
         {
             if (_bankConfigs == null)
                 lock (_lockObject)
@@ -176,65 +176,17 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     {
                         _bankConfigs = new Dictionary<string, BankConfig>();
 
-                        //sbanken
-                        _bankConfigs.Add("915287700", new BankConfig()
+                        foreach (var bank in banks.endpoints)
                         {
-                            BankUri = _danSettings.SBankenUri,
-                            BankAudience = _danSettings.SBankenAudience,
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(_danSettings.SBankenUri) }
-                        });
-
-                        //sparebank1 nordnorge
-                        _bankConfigs.Add("952706365", new BankConfig()
-                        {
-                            BankUri = string.Format(_danSettings.Sparebank1Uri, "952706365"),
-                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "952706365"),
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "952706365")) }
-                        });
-
-                        //sparebank1 hadeland
-                        _bankConfigs.Add("937889275", new BankConfig()
-                        {
-                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937889275"),
-                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937889275"),
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937889275")) }
-                        });
-
-                        //Sparebank1 smn
-                        _bankConfigs.Add("937901003", new BankConfig()
-                        {
-                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937901003"),
-                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937901003"),
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937901003")) }
-                        });
-
-                        //Sparebank1 sr-bank asa
-                        _bankConfigs.Add("937895321", new BankConfig()
-                        {
-                            BankUri = string.Format(_danSettings.Sparebank1Uri, "937895321"),
-                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "937895321"),
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "937895321")) }
-                        });
-
-                        //Sparebank1 østlandet
-                        _bankConfigs.Add("920426530", new BankConfig()
-                        {
-                            BankUri = string.Format(_danSettings.Sparebank1Uri, "920426530"),
-                            BankAudience = string.Format(_danSettings.Sparebank1Audience, "920426530"),
-                            MaskinportenUri = _danSettings.MaskinportenEndpoint,
-                            MaskinportenAudience = _danSettings.BankAudience,
-                            Client = new HttpClient() { BaseAddress = new Uri(string.Format(_danSettings.Sparebank1Uri, "920426530")) }
-                        });
+                            _bankConfigs.Add(bank.orgNo, new BankConfig()
+                            {
+                                BankUri = bank.url,
+                                BankAudience = bank.url,
+                                MaskinportenUri = _danSettings.MaskinportenEndpoint,
+                                MaskinportenAudience = _danSettings.BankAudience,
+                                Client = new HttpClient() { BaseAddress = new Uri(bank.url) }
+                            });
+                        }
                     }
         }
     }

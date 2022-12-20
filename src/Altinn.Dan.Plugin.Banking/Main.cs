@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ namespace Altinn.Dan.Plugin.Banking
         private ApplicationSettings _settings;
         private Guid _accountInfoRequestID = Guid.NewGuid();
         private Guid _correlationID = Guid.NewGuid();
+        private KontoOpplysninger _knownBanks;
 
         public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings)
         {
@@ -37,6 +39,36 @@ namespace Altinn.Dan.Plugin.Banking
             _settings = settings.Value;
         }
 
+        private async Task SetKnownEndpoints()
+        {
+            try
+            {
+                var implemented = _settings.ImplementedBanks.Split(",");
+
+                var response = await _client.GetAsync(_settings.FDKEndpointsUrl).ConfigureAwait(false);
+                var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
+                var result = new KontoOpplysninger();
+                result.endpoints = new Endpoint[implemented.Length-1];
+
+                int i = 0;
+                foreach (var ep in temp.endpoints)
+                {
+                    if (implemented.Contains(ep.orgNo))
+                    {
+                        result.endpoints[i] = ep;
+                        i++;
+                    }
+                }
+
+                _knownBanks = result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message + $"Failed retrieving endpoints from the api catalogue at {_settings.FDKEndpointsUrl}");
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_METADATA_LOOKUP_ERROR, $"Failed retrieving endpoints from the api catalogue");
+            }
+        }
+
         [Function("Banktransaksjoner")]
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
@@ -44,7 +76,7 @@ namespace Altinn.Dan.Plugin.Banking
         {
             _logger = context.GetLogger(context.FunctionDefinition.Name);
             _logger.LogInformation("Running func 'BankTransaksjoner'");
-
+            await SetKnownEndpoints();
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
@@ -95,7 +127,7 @@ namespace Altinn.Dan.Plugin.Banking
                 var banks = bankList.TrimEnd(';');
 
                 var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger);
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger, _knownBanks);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));

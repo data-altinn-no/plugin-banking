@@ -86,6 +86,12 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public string SBankenAudience { get; set; }
 
+        public string FDKEndpointsUrl { get; set; }
+
+        public KontoOpplysninger Endpoints { get; set; }
+
+        public string ImplementedBanks { get; set; }
+
         public X509Certificate2 Certificate
         {
             get

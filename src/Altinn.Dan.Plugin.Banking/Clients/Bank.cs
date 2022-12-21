@@ -125,6 +125,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
 
         private async Task<BankInfo> GetAccountDetails(Accounts accounts)
         {
+            //TODO: Take currency into account, expand model 
             BankInfo bankInfo = new BankInfo() { Accounts = new List<Altinn.Dan.Plugin.Banking.Models.Account>() };
             foreach (Account account in accounts.Accounts1)
             {

@@ -28,7 +28,6 @@ namespace Altinn.Dan.Plugin.Banking
         private ApplicationSettings _settings;
         private Guid _accountInfoRequestID = Guid.NewGuid();
         private Guid _correlationID = Guid.NewGuid();
-        private KontoOpplysninger _knownBanks;
 
         public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings)
         {
@@ -43,24 +42,27 @@ namespace Altinn.Dan.Plugin.Banking
         {
             try
             {
-                var implemented = _settings.ImplementedBanks.Split(",");
-
-                var response = await _client.GetAsync(_settings.FDKEndpointsUrl).ConfigureAwait(false);
-                var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
-                var result = new KontoOpplysninger();
-                result.endpoints = new Endpoint[implemented.Length-1];
-
-                int i = 0;
-                foreach (var ep in temp.endpoints)
+                if (_settings.Endpoints == null || _settings.Endpoints.endpoints?.Length < 1)
                 {
-                    if (implemented.Contains(ep.orgNo))
-                    {
-                        result.endpoints[i] = ep;
-                        i++;
-                    }
-                }
+                    var implemented = _settings.ImplementedBanks.Split(",");
 
-                _knownBanks = result;
+                    var response = await _client.GetAsync(_settings.FDKEndpointsUrl).ConfigureAwait(false);
+                    var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
+                    var result = new KontoOpplysninger();
+                    result.endpoints = new Endpoint[implemented.Length - 1];
+
+                    int i = 0;
+                    foreach (var ep in temp.endpoints)
+                    {
+                        if (implemented.Contains(ep.orgNo))
+                        {
+                            result.endpoints[i] = ep;
+                            i++;
+                        }
+                    }
+
+                    _settings.Endpoints = result;
+                }
             }
             catch (Exception ex)
             {
@@ -127,7 +129,7 @@ namespace Altinn.Dan.Plugin.Banking
                 var banks = bankList.TrimEnd(';');
 
                 var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger, _knownBanks);
+                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));

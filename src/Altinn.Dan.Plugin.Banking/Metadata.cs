@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
+using NJsonSchema;
+
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -34,8 +36,8 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonConvert.SerializeObject(new BankResponse())
-                        }
+                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.Indented)
+        }
                     },
                     Parameters = new List<EvidenceParameter>()
                     {

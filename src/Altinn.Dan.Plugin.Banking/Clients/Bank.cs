@@ -69,12 +69,12 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             }
         }
 
-        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID, ILogger logger, KontoOpplysninger endpoints)
+        public async Task<BankResponse> Get(string ssn, string bankList, ApplicationSettings settings, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestID, Guid correlationID, ILogger logger)
         {
             _danSettings = settings;
             _accountInfoRequestID = accountInfoRequestID;
             _correlationID = correlationID;
-            Configure(endpoints);
+            Configure(settings.Endpoints);
 
             BankResponse bankResponse = new BankResponse() { BankAccounts = new List<BankInfo>() };
             foreach (string bank in bankList.Split(';'))

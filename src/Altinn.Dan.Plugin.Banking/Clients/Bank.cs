@@ -176,7 +176,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     if (_bankConfigs == null)
                     {
                         _bankConfigs = new Dictionary<string, BankConfig>();
-
+                        
                         foreach (var bank in banks.endpoints)
                         {
                             _bankConfigs.Add(bank.orgNo, new BankConfig()

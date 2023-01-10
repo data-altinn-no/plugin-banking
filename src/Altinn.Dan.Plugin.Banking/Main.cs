@@ -116,7 +116,6 @@ namespace Altinn.Dan.Plugin.Banking
 
                 var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate, _accountInfoRequestID, _correlationID);
 
-
                 if (response.Banks.Count == 0)
                     return new List<EvidenceValue>();
 

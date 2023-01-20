@@ -20,17 +20,13 @@ namespace Altinn.Dan.Plugin.Banking.Config
             get { return Environment.GetEnvironmentVariable("KarUrl"); }
         }
 
-        public string BankAudience
-        {
-            get { return Environment.GetEnvironmentVariable("BankAudience"); }
-        }
         public static string KeyVaultSslCertificate => Environment.GetEnvironmentVariable("KeyVaultSslCertificate");
 
         public static string KeyVaultName => Environment.GetEnvironmentVariable("KeyVaultName");
 
         public string ClientId { get; set; }
 
-        public string MaskinportenEndpoint { get; set; }
+        public string MaskinportenEnvironment { get; set; }
 
         public static string DecryptCert { get; set; }
 

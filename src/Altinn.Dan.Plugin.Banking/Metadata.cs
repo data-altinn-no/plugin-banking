@@ -13,9 +13,9 @@ namespace Altinn.Dan.Plugin.Banking
     {
         public const string SOURCE = "Bits";
 
-        public const int ERROR_ORGANIZATION_NOT_FOUND = 1;
+        public static int ERROR_BANK_REQUEST_ERROR = 1;
 
-        public static int ERROR_CCR_UPSTREAM_ERROR = 2;
+        public static int ERROR_KAR_NOT_AVAILABLE_ERROR = 2;
 
         public static int ERROR_METADATA_LOOKUP_ERROR = 3;
 
@@ -36,7 +36,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.Indented)
+                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.None)
         }
                     },
                     Parameters = new List<EvidenceParameter>()

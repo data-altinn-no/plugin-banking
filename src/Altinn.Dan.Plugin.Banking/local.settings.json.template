@@ -1,15 +1,18 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "IsTest": "",
-    "IsDevelopment": "",
-    "Breaker_RetryWaitTime": "",
-    "Breaker_OpenCircuitTime": "",
-    "SBankenUri": "",
-    "SBankenAudience": "",
-    "KeyvaultSSLCrtificate": ""
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "KeyvaultSSLCrtificate": "",
+        "KeyVaultName": "",
+        "KeyVaultSslCertificate": "",
+        "Certificate": "",
+        "ClientId": "",
+        "MaskinportenEnvironment": "ver2",
+        "KarUrl": "https://preprod.api.bits.no/kar-ws/api/v1",
+        "DecryptCert": "",
+        "FDKEndpointsUrl": "https://demo.fellesdatakatalog.digdir.no/endpoints?environment=test&serviceType=Kontoopplysninger",
+        "ImplementedBanks": ""
   }
 
 }

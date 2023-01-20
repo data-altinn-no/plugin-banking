@@ -17,24 +17,28 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Altinn.ApiClients.Maskinporten.Interfaces;
+using Altinn.Dan.Plugin.Banking.Models;
+using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Dan.Common.Extensions;
 
 namespace Altinn.Dan.Plugin.Banking
 {
     public class Main
     {
+        private readonly IMaskinportenService _maskinportenService;
+        private readonly IBankService _bankService;
+        private readonly IKARService _karService;
         private ILogger _logger;
-        private HttpClient _client;
-        private ApplicationSettings _settings;
-        private Guid _accountInfoRequestID = Guid.NewGuid();
-        private Guid _correlationID = Guid.NewGuid();
+        private readonly HttpClient _client;
+        private readonly ApplicationSettings _settings;
 
-        public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings)
+        public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings, IMaskinportenService maskinportenService, IBankService bankService, IKARService karService)
         {
+            _maskinportenService = maskinportenService;
+            _bankService = bankService;
+            _karService = karService;
             _client = httpClientFactory.CreateClient("SafeHttpClient");
-
-            //adjust for frequent KAR timeouts
-            _client.Timeout = new TimeSpan(0, 0, 10, 30);
             _settings = settings.Value;
         }
 
@@ -48,25 +52,28 @@ namespace Altinn.Dan.Plugin.Banking
 
                     var response = await _client.GetAsync(_settings.FDKEndpointsUrl).ConfigureAwait(false);
                     var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
-                    var result = new KontoOpplysninger();
-                    result.endpoints = new Endpoint[implemented.Length - 1];
+                    var result = new KontoOpplysninger
+                    {
+                        endpoints = new Endpoint[implemented.Length - 1]
+                    };
 
                     int i = 0;
-                    foreach (var ep in temp.endpoints)
-                    {
-                        if (implemented.Contains(ep.orgNo))
+                    if (temp != null)
+                        foreach (var ep in temp.endpoints)
                         {
-                            result.endpoints[i] = ep;
-                            i++;
+                            if (implemented.Contains(ep.orgNo))
+                            {
+                                result.endpoints[i] = ep;
+                                i++;
+                            }
                         }
-                    }
 
                     _settings.Endpoints = result;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message + $"Failed retrieving endpoints from the api catalogue at {_settings.FDKEndpointsUrl}");
+                _logger.LogError( "Failed retrieving endpoints from the api catalogue at {FdkEndpointUrl}: {Error}", _settings.FDKEndpointsUrl, ex.Message);
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_METADATA_LOOKUP_ERROR, $"Failed retrieving endpoints from the api catalogue");
             }
         }
@@ -81,54 +88,55 @@ namespace Altinn.Dan.Plugin.Banking
             await SetKnownEndpoints();
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
+            /* // For local debug, returns unenveloped JSON (but doesn't handle exceptions)
+            var ret = await GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest);
+            var response =  HttpResponseData.CreateResponse(req);
+            response.Headers.Add("Content-Type", "application/json");
+            await response.WriteStringAsync(ret.First().Value.ToString());
+            return response;
+            */
+
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesBankTransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
-            var mpToken = GetToken();
-            var kar = new KAR(_client);
-            kar.BaseUrl = _settings.KarUrl;
+            var accountInfoRequestId = Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
 
+            var ssn = OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank");
 
             try
             {
-                string fromDate;
-                string toDate;
+                // TODO! Add DateTimeOffset overload for TryGetParameter
+                var fromDate = evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramFromDate)
+                    ? paramFromDate
+                    : DateTime.Now.AddMonths(-3);
 
-                if (evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramDate))
-                {
-                    fromDate = paramDate.ToString("yyyy-MM-dd");
-                }
-                else
-                {
-                    fromDate = DateTime.Now.AddMonths(-3).ToString("yyyy-MM-dd");
-                }
+                var toDate = evidenceHarvesterRequest.TryGetParameter("TilDato", out DateTime paramToDate)
+                    ? paramToDate
+                    : DateTime.Now;
 
-                if (evidenceHarvesterRequest.TryGetParameter("TilDato", out paramDate))
+                KARResponse karResponse;
+                try
                 {
-                    toDate = paramDate.ToString("yyyy-MM-dd");
+                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId, correlationId);
                 }
-                else
+                catch (TaskCanceledException)
                 {
-                    toDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, "Request to KAR timed out");
                 }
 
-                var response = await kar.Get(evidenceHarvesterRequest.OrganizationNumber, mpToken, fromDate, toDate, _accountInfoRequestID, _correlationID);
-
-                if (response.Banks.Count == 0)
+                if (karResponse.Banks.Count == 0)
                     return new List<EvidenceValue>();
 
-                string bankList = null;
-                foreach (var a in response.Banks)
-                {
-                    bankList += $"{a.OrganizationID}:{a.BankName};";
-                }
-
-                var banks = bankList.TrimEnd(';');
-
-                var bank = new Bank(_client);
-                var bankResult = await bank.Get(OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank"), banks, _settings, DateTimeOffset.Parse(fromDate), DateTimeOffset.Parse(toDate), _accountInfoRequestID, _correlationID, _logger);
+                var bankResult = await _bankService.GetTransactions(
+                    ssn,
+                    karResponse,
+                    fromDate,
+                    toDate,
+                    accountInfoRequestId,
+                    correlationId);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
@@ -137,20 +145,15 @@ namespace Altinn.Dan.Plugin.Banking
             }
             catch (Exception e)
             {
-                _logger.LogError(String.Format("Banktransaksjoner failed for {0}, error {1} (accountInfoRequestID: {2}, correlationID: {3})",
-                    evidenceHarvesterRequest.OrganizationNumber.Length == 11 ? evidenceHarvesterRequest.OrganizationNumber.Substring(0, 6) : evidenceHarvesterRequest.OrganizationNumber, e.Message, _accountInfoRequestID, _correlationID));
-                throw new EvidenceSourceTransientException(Altinn.Dan.Plugin.Banking.Metadata.ERROR_CCR_UPSTREAM_ERROR, "Could not retrieve bank transactions");
+                if (e is DanException) throw;
+
+                _logger.LogError(
+                    "Banktransaksjoner failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
+                    ssn[..6], e.Message, accountInfoRequestId, correlationId);
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
 
             }
         }
-
-        private string GetToken(string audience = null)
-        {
-            var mp = new MaskinportenUtil(audience, "bits:kundeforhold", _settings.ClientId, false, "https://ver2.maskinporten.no/", _settings.Certificate, "https://ver2.maskinporten.no/", null);
-            return mp.GetToken();
-        }
-
-
 
         [Function(Constants.EvidenceSourceMetadataFunctionName)]
         public async Task<HttpResponseData> Metadata(

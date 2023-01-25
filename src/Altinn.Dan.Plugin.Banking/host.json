@@ -1,3 +1,14 @@
 {
-    "version": "2.0"   
+    "version": "2.0",
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": false
+            }
+        },
+        "logLevel": {
+            "default": "Information",
+            "Microsoft": "Warning"
+        }
+    }
 }

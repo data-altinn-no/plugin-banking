@@ -17,29 +17,28 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Altinn.ApiClients.Maskinporten.Interfaces;
+using Altinn.Dan.Plugin.Banking.Exceptions;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Dan.Common.Extensions;
 
 namespace Altinn.Dan.Plugin.Banking
 {
-    public class Main
+    public class Plugin
     {
-        private readonly IMaskinportenService _maskinportenService;
         private readonly IBankService _bankService;
         private readonly IKARService _karService;
-        private ILogger _logger;
+        private readonly ILogger _logger;
         private readonly HttpClient _client;
         private readonly ApplicationSettings _settings;
 
-        public Main(IHttpClientFactory httpClientFactory, IOptions<ApplicationSettings> settings, IMaskinportenService maskinportenService, IBankService bankService, IKARService karService)
+        public Plugin(IOptions<ApplicationSettings> settings, ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IBankService bankService, IKARService karService)
         {
-            _maskinportenService = maskinportenService;
             _bankService = bankService;
             _karService = karService;
             _client = httpClientFactory.CreateClient("SafeHttpClient");
             _settings = settings.Value;
+            _logger = loggerFactory.CreateLogger<Plugin>();
         }
 
         private async Task SetKnownEndpoints()
@@ -68,6 +67,7 @@ namespace Altinn.Dan.Plugin.Banking
                             }
                         }
 
+                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
                     _settings.Endpoints = result;
                 }
             }
@@ -83,8 +83,6 @@ namespace Altinn.Dan.Plugin.Banking
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
         {
-            _logger = context.GetLogger(context.FunctionDefinition.Name);
-            _logger.LogInformation("Running func 'BankTransaksjoner'");
             await SetKnownEndpoints();
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
@@ -120,11 +118,17 @@ namespace Altinn.Dan.Plugin.Banking
                 KARResponse karResponse;
                 try
                 {
-                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId, correlationId);
+                    karResponse =
+                        await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId,
+                            correlationId);
+                }
+                catch (ApiException e)
+                {
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR failed (HTTP status code: {e.StatusCode}, accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
                 catch (TaskCanceledException)
                 {
-                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, "Request to KAR timed out");
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
                 if (karResponse.Banks.Count == 0)
@@ -159,7 +163,6 @@ namespace Altinn.Dan.Plugin.Banking
         public async Task<HttpResponseData> Metadata(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, FunctionContext context)
         {
-            _logger = context.GetLogger(context.FunctionDefinition.Name);
             _logger.LogInformation($"Running metadata for {Constants.EvidenceSourceMetadataFunctionName}");
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(new Metadata().GetEvidenceCodes(), new NewtonsoftJsonObjectSerializer(new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto }));

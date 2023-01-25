@@ -1,13 +1,12 @@
 using Altinn.Dan.Plugin.Banking.Models;
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Altinn.Dan.Plugin.Banking.Clients
 {
+    // ReSharper disable once InconsistentNaming
     public partial class KAR
     {
         public async Task<KARResponse> Get(string ssn, string mpToken, string fromDate, string toDate, Guid accountInfoRequestId, Guid correlationId, CancellationToken? ct = null)

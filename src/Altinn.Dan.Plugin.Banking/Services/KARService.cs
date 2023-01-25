@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using Altinn.Dan.Plugin.Banking.Clients;
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.Dan.Plugin.Banking.Services;
@@ -20,14 +18,12 @@ public class KARService : IKARService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMaskinportenService _maskinportenService;
     private readonly ApplicationSettings _settings;
-    private readonly ILogger<KARService> _logger;
 
-    public KARService(IHttpClientFactory httpClientFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings, ILogger<KARService> logger)
+    public KARService(IHttpClientFactory httpClientFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings)
     {
         _httpClientFactory = httpClientFactory;
         _maskinportenService = maskinportenService;
         _settings = applicationSettings.Value;
-        _logger = logger;
     }
 
     public async Task<KARResponse> GetBanksForCustomer(string ssn, DateTimeOffset fromDate, DateTimeOffset toDate, Guid accountInfoRequestId, Guid correlationId)

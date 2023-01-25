@@ -1,6 +1,5 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
-using Dan.Plugin.Banking;
 
 namespace Altinn.Dan.Plugin.Banking.Config
 {

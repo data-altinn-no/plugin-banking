@@ -1,13 +1,10 @@
 using System;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using Dan.Common.Exceptions;
 
-
-namespace Dan.Plugin.Banking;
+namespace Altinn.Dan.Plugin.Banking.Config;
 
 /// <summary>
 /// Key Vault for Core

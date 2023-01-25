@@ -30,10 +30,10 @@ namespace Altinn.Dan.Plugin.Banking.Services
         private static Dictionary<string, BankConfig> _bankConfigs;
         private static readonly object LockObject = new();
 
-        public BankService(IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings, ILogger<BankService> logger)
+        public BankService(ILoggerFactory loggerFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings)
         {
             _maskinportenService = maskinportenService;
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<BankService>();
             _settings = applicationSettings.Value;
         }
 

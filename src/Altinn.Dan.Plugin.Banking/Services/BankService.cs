@@ -69,8 +69,18 @@ namespace Altinn.Dan.Plugin.Banking.Services
             }
 
             await Task.WhenAll(bankTasks);
+            var takenOneEmptyBank = false;
             foreach (var bankTask in bankTasks)
             {
+                // If we're skipping KAR (in test mode), just include one more additional "empty" bank
+                if (_settings.SkipKAR && bankTask.Result.Accounts.Count == 0)
+                {
+                    if (takenOneEmptyBank)
+                        continue;
+
+                    takenOneEmptyBank = true;
+                }
+
                 bankResponse.BankAccounts.Add(bankTask.Result);
             }
 

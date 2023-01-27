@@ -12,7 +12,8 @@
         "KarUrl": "https://preprod.api.bits.no/kar-ws/api/v1",
         "DecryptCert": "",
         "FDKEndpointsUrl": "https://demo.fellesdatakatalog.digdir.no/endpoints?environment=test&serviceType=Kontoopplysninger",
-        "ImplementedBanks": ""
+        "ImplementedBanks": "",
+        "SkipKAR": false
   }
 
 }

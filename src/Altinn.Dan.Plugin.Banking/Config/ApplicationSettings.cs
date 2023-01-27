@@ -35,6 +35,8 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public string ImplementedBanks { get; set; }
 
+        public bool SkipKAR { get; set; }
+
         public X509Certificate2 Certificate
         {
             get

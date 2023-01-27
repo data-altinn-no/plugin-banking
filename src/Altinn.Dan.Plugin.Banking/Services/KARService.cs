@@ -1,5 +1,8 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Altinn.ApiClients.Maskinporten.Interfaces;
@@ -28,26 +31,11 @@ public class KARService : IKARService
 
     public async Task<KARResponse> GetBanksForCustomer(string ssn, DateTimeOffset fromDate, DateTimeOffset toDate, Guid accountInfoRequestId, Guid correlationId)
     {
-/*
-        return new KARResponse()
+        if (_settings.SkipKAR)
         {
-            Banks = new List<CustomerRelation>()
-            {
-                new()
-                {
-                    ActiveAccount = true,
-                    BankName = "SBANKEN ASA",
-                    OrganizationID = "915287700"
-                },
-                new()
-                {
-                    ActiveAccount = true,
-                    BankName = "SPAREBANK 1 SMN",
-                    OrganizationID = "937901003"
-                }
-            }
-        };
-*/
+            return await GetAllImplementedBanks();
+        }
+
         var kar = new KAR(_httpClientFactory.CreateClient("KAR"))
         {
             BaseUrl = _settings.KarUrl
@@ -61,4 +49,32 @@ public class KARService : IKARService
         return await kar.Get(ssn, token.AccessToken, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"),
             accountInfoRequestId, correlationId, karTimeout.Token);
     }
+
+    private static readonly KARResponse ImplementedBanksCache = new() { Banks = new List<CustomerRelation>() };
+    private async Task<KARResponse> GetAllImplementedBanks()
+    {
+        if (ImplementedBanksCache.Banks.Count > 0) return ImplementedBanksCache;
+
+        var banks = _settings.ImplementedBanks.Split(',');
+        var erClient = _httpClientFactory.CreateClient("er");
+        var customerRelationTasks = banks.Select(bank => Task.Run(async () =>
+        {
+            var response = await erClient.GetFromJsonAsync<ER>($"https://data.brreg.no/enhetsregisteret/api/enheter/{bank}");
+            return new CustomerRelation { ActiveAccount = true, BankName = response.navn, OrganizationID = response.organisasjonsNummer };
+        }))
+        .ToList();
+
+        await Task.WhenAll(customerRelationTasks);
+        foreach (var customerRelationTask in customerRelationTasks)
+        {
+            ImplementedBanksCache.Banks.Add(customerRelationTask.Result);
+        }
+
+        return ImplementedBanksCache;
+    }
+}
+
+internal class ER {
+    public string organisasjonsNummer { get; set; }
+    public string navn { get; set; }
 }

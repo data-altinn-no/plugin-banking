@@ -29,9 +29,9 @@ public class KARService : IKARService
         _settings = applicationSettings.Value;
     }
 
-    public async Task<KARResponse> GetBanksForCustomer(string ssn, DateTimeOffset fromDate, DateTimeOffset toDate, Guid accountInfoRequestId, Guid correlationId)
+    public async Task<KARResponse> GetBanksForCustomer(string ssn, DateTimeOffset fromDate, DateTimeOffset toDate, Guid accountInfoRequestId, Guid correlationId, bool skipKAR)
     {
-        if (_settings.SkipKAR)
+        if (skipKAR)
         {
             return await GetAllImplementedBanks();
         }

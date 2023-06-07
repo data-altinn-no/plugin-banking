@@ -1,9 +1,11 @@
-using Altinn.Dan.Plugin.Banking.Clients;
 using Altinn.Dan.Plugin.Banking.Config;
-using Altinn.Dan.Plugin.Banking.Utils;
+using Altinn.Dan.Plugin.Banking.Exceptions;
+using Altinn.Dan.Plugin.Banking.Models;
+using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Azure.Core.Serialization;
 using Dan.Common;
 using Dan.Common.Exceptions;
+using Dan.Common.Extensions;
 using Dan.Common.Models;
 using Dan.Common.Util;
 using Microsoft.Azure.Functions.Worker;
@@ -17,10 +19,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Altinn.Dan.Plugin.Banking.Exceptions;
-using Altinn.Dan.Plugin.Banking.Models;
-using Altinn.Dan.Plugin.Banking.Services.Interfaces;
-using Dan.Common.Extensions;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -102,7 +100,7 @@ namespace Altinn.Dan.Plugin.Banking
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
 
-            var ssn = OEDUtils.MapSsn(evidenceHarvesterRequest.OrganizationNumber, "bank");
+            var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
             try
             {
@@ -115,12 +113,12 @@ namespace Altinn.Dan.Plugin.Banking
                     ? paramToDate
                     : DateTime.Now;
 
+                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
+
                 KARResponse karResponse;
                 try
-                {
-                    karResponse =
-                        await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId,
-                            correlationId);
+                {   //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
+                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
                 }
                 catch (ApiException e)
                 {
@@ -143,7 +141,7 @@ namespace Altinn.Dan.Plugin.Banking
                     correlationId);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
-                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult));
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
 
                 return ecb.GetEvidenceValues();
             }
@@ -153,7 +151,7 @@ namespace Altinn.Dan.Plugin.Banking
 
                 _logger.LogError(
                     "Banktransaksjoner failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
-                    ssn[..6], e.Message, accountInfoRequestId, correlationId);
+                    evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
 
             }

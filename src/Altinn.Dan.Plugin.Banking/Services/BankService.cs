@@ -50,6 +50,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 {
                     string orgnr = bank.OrganizationID;
                     string name = bank.BankName;
+
                     BankInfo bankInfo;
                     try
                     {
@@ -87,14 +88,13 @@ namespace Altinn.Dan.Plugin.Banking.Services
             return bankResponse;
         }
 
-        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId)
+        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId, string maskinportenEnv = "")
         {
             if (!_bankConfigs.ContainsKey(orgnr))
                 return new BankInfo { Accounts = new List<AccountDto>(), IsImplemented = false };
 
             BankConfig bankConfig = _bankConfigs[orgnr];
-            var token = await _maskinportenService.GetToken(_settings.Certificate, _settings.MaskinportenEnvironment,
-                _settings.ClientId, "bits:kontoinformasjon.oed", bankConfig.BankAudience);
+            var token = await _maskinportenService.GetToken(_settings.Certificate, bankConfig.MaskinportenEnv, _settings.ClientId, "bits:kontoinformasjon.oed", bankConfig.BankAudience);
 
             bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
@@ -190,7 +190,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             };
         }
 
-        private static void Configure(KontoOpplysninger banks)
+        private void Configure(KontoOpplysninger banks)
         {
             if (_bankConfigs != null) return;
             lock (LockObject)
@@ -203,7 +203,8 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     _bankConfigs.Add(bank.orgNo, new BankConfig()
                     {
                         BankAudience = bank.url,
-                        Client = new HttpClient { BaseAddress = new Uri(bank.url) }
+                        Client = new HttpClient { BaseAddress = new Uri(bank.url) },
+                        MaskinportenEnv = bank.orgNo == "920058817" ? "test" : _settings.MaskinportenEnvironment
                     });
                 }
             }
@@ -214,5 +215,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
     {
         public HttpClient Client { get; init; }
         public string BankAudience { get; init; }
+
+        public string MaskinportenEnv { get; init; }
     }
 }

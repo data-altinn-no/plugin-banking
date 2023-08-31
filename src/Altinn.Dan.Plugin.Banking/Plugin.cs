@@ -132,13 +132,7 @@ namespace Altinn.Dan.Plugin.Banking
                 if (karResponse.Banks.Count == 0)
                     return new List<EvidenceValue>();
 
-                var bankResult = await _bankService.GetTransactions(
-                    ssn,
-                    karResponse,
-                    fromDate,
-                    toDate,
-                    accountInfoRequestId,
-                    correlationId);
+                var bankResult = await _bankService.GetTransactions(ssn, karResponse, fromDate, toDate, accountInfoRequestId, correlationId);
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);

@@ -107,7 +107,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, null, null, null,
                 fromDate, toDate, accountListTimeout.Token);
 
-            return await GetAccountDetails(bankClient, accounts, accountInfoRequestId, correlationId);
+            return await GetAccountDetails(bankClient, accounts, accountInfoRequestId, correlationId); //application/jose
         }
 
         private async Task<BankInfo> GetAccountDetails(Bank bankClient, Accounts accounts, Guid accountInfoRequestId, Guid correlationId)

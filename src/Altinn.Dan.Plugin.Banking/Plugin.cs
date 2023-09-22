@@ -10,6 +10,7 @@ using Dan.Common.Models;
 using Dan.Common.Util;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -51,7 +52,7 @@ namespace Altinn.Dan.Plugin.Banking
                     var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
                     var result = new KontoOpplysninger
                     {
-                        endpoints = new Endpoint[implemented.Length - 1]
+                        endpoints = new Endpoint[implemented.Length]
                     };
 
                     int i = 0;
@@ -64,9 +65,9 @@ namespace Altinn.Dan.Plugin.Banking
                                 i++;
                             }
                         }
-
-                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
                     _settings.Endpoints = result;
+                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
+
                 }
             }
             catch (Exception ex)

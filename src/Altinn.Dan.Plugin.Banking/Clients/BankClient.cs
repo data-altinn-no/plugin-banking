@@ -119,7 +119,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                     if (additionalReferenceIDType != null)
                         request_.Headers.TryAddWithoutValidation("AdditionalReferenceIDType", ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose,application/json"));
 
                     PrepareRequest(client_, request_, urlBuilder_);
 

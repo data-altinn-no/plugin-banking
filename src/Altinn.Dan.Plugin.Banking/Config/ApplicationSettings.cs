@@ -60,5 +60,9 @@ namespace Altinn.Dan.Plugin.Banking.Config
             }
         }
 
+        public string ProxyUrl { get; set; }
+
+        public bool UseProxy { get; set; }
+
     }
 }

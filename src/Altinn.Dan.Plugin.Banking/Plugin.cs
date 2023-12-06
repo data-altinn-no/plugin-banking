@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -61,12 +62,14 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             if (implemented.Contains(ep.orgNo))
                             {
+                                ep.url = _settings.UseProxy ? string.Format(string.Format(_settings.ProxyUrl, HttpUtility.HtmlEncode(ep.url.Replace("https://","")))) : ep.url;
                                 result.endpoints[i] = ep;
                                 i++;
                             }
                         }
-                    _settings.Endpoints = result;
-                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
+
+                _settings.Endpoints = result;
+                _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
 
                 }
             }
@@ -118,8 +121,10 @@ namespace Altinn.Dan.Plugin.Banking
 
                 KARResponse karResponse;
                 try
-                {   //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
-                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDate, toDate, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
+                {
+                    DateTimeOffset todayDto = new DateTimeOffset(DateTime.Now);
+                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
+                    karResponse = await _karService.GetBanksForCustomer(ssn, todayDto, todayDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
                 }
                 catch (ApiException e)
                 {

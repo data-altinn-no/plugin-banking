@@ -2,6 +2,7 @@ using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Exceptions;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
+using Altinn.Dan.Plugin.Banking.Utils;
 using Azure.Core.Serialization;
 using Dan.Common;
 using Dan.Common.Exceptions;
@@ -10,7 +11,6 @@ using Dan.Common.Models;
 using Dan.Common.Util;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -19,9 +19,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using System.Web;
-using Altinn.Dan.Plugin.Banking.Utils;
+using FileHelpers;
+using System.Text;
+using FileHelpers.Options;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -32,17 +35,20 @@ namespace Altinn.Dan.Plugin.Banking
         private readonly ILogger _logger;
         private readonly HttpClient _client;
         private readonly ApplicationSettings _settings;
+        private readonly IMemoryCacheProvider _memCache;
+        private const string ENDPOINTS_KEY = "endpoints_key";
 
-        public Plugin(IOptions<ApplicationSettings> settings, ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IBankService bankService, IKARService karService)
+        public Plugin(IOptions<ApplicationSettings> settings, ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IBankService bankService, IKARService karService, IMemoryCacheProvider memCache)
         {
             _bankService = bankService;
             _karService = karService;
             _client = httpClientFactory.CreateClient("SafeHttpClient");
             _settings = settings.Value;
             _logger = loggerFactory.CreateLogger<Plugin>();
+            _memCache = memCache;
         }
 
-        private async Task SetKnownEndpoints()
+        private async Task SetEndpoints()
         {
             try
             {
@@ -64,20 +70,20 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             if (implemented.Contains(ep.orgNo) && (!result.endpoints.Any(x => x.AreEqual(ep.orgNo))))
                             {
-                                ep.url = _settings.UseProxy ? string.Format(string.Format(_settings.ProxyUrl, HttpUtility.HtmlEncode(ep.url.Replace("https://","")))) : ep.url;
+                                ep.url = _settings.UseProxy ? string.Format(string.Format(_settings.ProxyUrl, HttpUtility.HtmlEncode(ep.url.Replace("https://", "")))) : ep.url;
                                 result.endpoints[i] = ep;
                                 i++;
                             }
                         }
 
-                _settings.Endpoints = result;
-                _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
+                    _settings.Endpoints = result;
+                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
 
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError( "Failed retrieving endpoints from the api catalogue at {FdkEndpointUrl}: {Error}", _settings.FDKEndpointsUrl, ex.Message);
+                _logger.LogError("Failed retrieving endpoints from the api catalogue at {FdkEndpointUrl}: {Error}", _settings.FDKEndpointsUrl, ex.Message);
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_METADATA_LOOKUP_ERROR, $"Failed retrieving endpoints from the api catalogue");
             }
         }
@@ -88,7 +94,7 @@ namespace Altinn.Dan.Plugin.Banking
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
         {
-            await SetKnownEndpoints();
+            await SetEndpoints();
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
             /* // For local debug, returns unenveloped JSON (but doesn't handle exceptions)
@@ -109,10 +115,37 @@ namespace Altinn.Dan.Plugin.Banking
         {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
-            //Read endpoints from cache
+            (bool hasCachedValue, var endpoints) = await _memCache.TryGetEndpoints(ENDPOINTS_KEY);
 
-            //Return 200 and endpoints
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
+            if (!hasCachedValue)
+            {
+                endpoints = await ReadEndpointsAndCache();
+            }
+
+            if (endpoints == null || endpoints.Count == 0)
+            {
+                _logger.LogCritical($"Plugin func-es-banking no endpoints found in csv!!!");
+                throw new EvidenceSourceTransientException(1001, "No endpoints found!");
+            }
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count});
+            return response;
+        }
+
+        private async Task<List<EndpointV2>> ReadEndpointsAndCache()
+        {
+            var bytes = await _client.GetByteArrayAsync(_settings.EndpointsResourceFile);
+            var file = Encoding.UTF8.GetString(bytes,0, bytes.Length);
+
+            var engine = new DelimitedFileEngine<EndpointV2>(Encoding.UTF8);
+            var endpoints = engine.ReadString(file).ToList();
+
+            _logger.LogInformation($"Endpoints parsed from csv - {engine.TotalRecords} to be cached");
+
+            await _memCache.Set(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(60));
+            _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
+            return endpoints;
         }
 
         [Function("OppdaterKontrollinformasjon")]
@@ -122,8 +155,11 @@ namespace Altinn.Dan.Plugin.Banking
         {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
+            var endpoints = await ReadEndpointsAndCache();
 
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count });
+            return response;
         }
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesBankTransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)

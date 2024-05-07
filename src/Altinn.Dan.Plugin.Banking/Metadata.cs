@@ -67,6 +67,21 @@ namespace Altinn.Dan.Plugin.Banking
                             RequiredScopes = new List<string> {"altinn:dataaltinnno/oed" }
                         }
                     }
+                },
+                new EvidenceCode()
+                {
+                    EvidenceCodeName = "Kontrollinformasjon",
+                    EvidenceSource = SOURCE,
+                    BelongsToServiceContexts = new List<string> { "BITS" },
+                    Values = new List<EvidenceValue>()
+                    {
+                        new EvidenceValue()
+                        {
+                            EvidenceValueName = "default",
+                            ValueType = EvidenceValueType.JsonSchema,
+                            JsonSchemaDefintion = JsonSchema.FromType<Endpoint>().ToJson(Formatting.None)
+                        }
+                    },
                 }
            };
         }

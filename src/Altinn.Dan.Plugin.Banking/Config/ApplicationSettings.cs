@@ -64,5 +64,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public bool UseProxy { get; set; }
 
+        public string EndpointsResourceFile { get; set; }
+
     }
 }

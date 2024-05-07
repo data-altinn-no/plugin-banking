@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using Altinn.Dan.Plugin.Banking.Utils;
 
 namespace Altinn.Dan.Plugin.Banking
 {
@@ -56,11 +57,12 @@ namespace Altinn.Dan.Plugin.Banking
                         endpoints = new Endpoint[implemented.Length]
                     };
 
+
                     int i = 0;
                     if (temp != null)
                         foreach (var ep in temp.endpoints)
                         {
-                            if (implemented.Contains(ep.orgNo))
+                            if (implemented.Contains(ep.orgNo) && (!result.endpoints.Any(x => x.AreEqual(ep.orgNo))))
                             {
                                 ep.url = _settings.UseProxy ? string.Format(string.Format(_settings.ProxyUrl, HttpUtility.HtmlEncode(ep.url.Replace("https://","")))) : ep.url;
                                 result.endpoints[i] = ep;
@@ -80,6 +82,7 @@ namespace Altinn.Dan.Plugin.Banking
             }
         }
 
+
         [Function("Banktransaksjoner")]
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
@@ -95,6 +98,30 @@ namespace Altinn.Dan.Plugin.Banking
             await response.WriteStringAsync(ret.First().Value.ToString());
             return response;
             */
+
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
+        }
+
+        [Function("Kontrollinformasjon")]
+        public async Task<HttpResponseData> GetKontrollinformasjon(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
+        {
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+
+            //Read endpoints from cache
+
+            //Return 200 and endpoints
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
+        }
+
+        [Function("OppdaterKontrollinformasjon")]
+        public async Task<HttpResponseData> UpdateKontrollinformasjon(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
+        {
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+
 
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }

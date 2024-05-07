@@ -10,7 +10,7 @@ on:
 
 jobs:
  run:
-   uses: Altinn/dan-deploy-actions/.github/workflows/dan-deploy-flow.yml@main
+   uses: Altinn/deploy-actions/.github/workflows/dan-deploy-flow.yml@main
    with:
      artifact_name: 'dan-plugin-banking' # Can be omitted, defaults to 'artifact'
      function_project_path: 'src/Altinn.Dan.Plugin.Banking'

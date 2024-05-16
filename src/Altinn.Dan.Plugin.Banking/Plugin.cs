@@ -115,6 +115,11 @@ namespace Altinn.Dan.Plugin.Banking
         {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKontrollinformasjon());
+        }
+
+        private async Task<List<EvidenceValue>> GetEvidenceValuesKontrollinformasjon()
+        {
             (bool hasCachedValue, var endpoints) = await _memCache.TryGetEndpoints(ENDPOINTS_KEY);
 
             if (!hasCachedValue)
@@ -122,9 +127,10 @@ namespace Altinn.Dan.Plugin.Banking
                 endpoints = await ReadEndpointsAndCache();
             }
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count});
-            return response;
+            var ecb = new EvidenceBuilder(new Metadata(), "Kontrollinformasjon");
+            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(endpoints), "BITS", false);
+
+            return ecb.GetEvidenceValues();
         }
 
         private async Task<List<EndpointExternal>> ReadEndpointsAndCache()

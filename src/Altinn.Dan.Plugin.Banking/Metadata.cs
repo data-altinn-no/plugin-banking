@@ -81,6 +81,13 @@ namespace Altinn.Dan.Plugin.Banking
                             ValueType = EvidenceValueType.JsonSchema,
                             JsonSchemaDefintion = JsonSchema.FromType<List<EndpointExternal>>().ToJson(Formatting.None)
                         }
+                    },
+                    AuthorizationRequirements = new List<Requirement>()
+                    {
+                        new MaskinportenScopeRequirement()
+                        {
+                            RequiredScopes = new List<string>(){"altinn:dataaltinnno/kontrollinformasjon"}
+                        }
                     }
                 }
            };

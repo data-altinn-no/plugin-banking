@@ -72,16 +72,16 @@ namespace Altinn.Dan.Plugin.Banking
                 {
                     EvidenceCodeName = "Kontrollinformasjon",
                     EvidenceSource = SOURCE,
-                    BelongsToServiceContexts = new List<string> { "BITS" },
+                    BelongsToServiceContexts = new List<string> { "Bits kontrollinformasjon" },
                     Values = new List<EvidenceValue>()
                     {
                         new EvidenceValue()
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<Endpoint>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = JsonSchema.FromType<List<EndpointExternal>>().ToJson(Formatting.None)
                         }
-                    },
+                    }
                 }
            };
         }

@@ -47,9 +47,27 @@ namespace Altinn.Dan.Plugin.Banking.Models
     public class EndpointsList
     {
         [JsonProperty("endpoints")]
-        public List<EndpointV2> Endpoints { get; set; }
+        public List<EndpointExternal> Endpoints { get; set; }
 
         [JsonProperty("total")]
         public int Total { get; set; }
+    }
+
+    public class EndpointExternal
+    {
+        [JsonProperty("orgNo")]
+        public string OrgNo { get; set; }
+
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("url")]
+        public string Url { get; set; }
+
+        [JsonProperty("version")]
+        public string Version { get; set; }
+
+        [JsonProperty("env")]
+        public string Env { get; set; }
     }
 }

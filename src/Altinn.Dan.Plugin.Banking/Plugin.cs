@@ -122,18 +122,12 @@ namespace Altinn.Dan.Plugin.Banking
                 endpoints = await ReadEndpointsAndCache();
             }
 
-            if (endpoints == null || endpoints.Count == 0)
-            {
-                _logger.LogCritical($"Plugin func-es-banking no endpoints found in csv!!!");
-                throw new EvidenceSourceTransientException(1001, "No endpoints found!");
-            }
-
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count});
             return response;
         }
 
-        private async Task<List<EndpointV2>> ReadEndpointsAndCache()
+        private async Task<List<EndpointExternal>> ReadEndpointsAndCache()
         {
             var bytes = await _client.GetByteArrayAsync(_settings.EndpointsResourceFile);
             var file = Encoding.UTF8.GetString(bytes,0, bytes.Length);
@@ -141,20 +135,42 @@ namespace Altinn.Dan.Plugin.Banking
             var engine = new DelimitedFileEngine<EndpointV2>(Encoding.UTF8);
             var endpoints = engine.ReadString(file).ToList();
 
+            List<EndpointExternal> result = new List<EndpointExternal>();
             _logger.LogInformation($"Endpoints parsed from csv - {engine.TotalRecords} to be cached");
 
-            await _memCache.Set(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(60));
-            _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
-            return endpoints;
+            if (engine.TotalRecords > 0 && endpoints.Count>0)
+            {               
+                result = await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(60));
+                _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
+            } else
+            {
+                _logger.LogCritical($"Plugin func-es-banking no endpoints found in csv!!!");
+            }
+
+            return result;
+        }
+
+        //Env =
+        private List<EndpointExternal> MapToExternal(List<EndpointV2> endpoints)
+        {
+            var query = from endpoint in endpoints
+                        select new EndpointExternal()
+                        {
+                            Env = _settings.UseTestEndpoints ? "test" : "prod",
+                            Name = endpoint.Navn,
+                            OrgNo = endpoint.OrgNummer,
+                            Url = _settings.UseTestEndpoints ? endpoint.EndepunktTest : endpoint.EndepunktProduksjon,
+                            Version = endpoint.Version,
+                        };
+
+            return query.ToList();
         }
 
         [Function("OppdaterKontrollinformasjon")]
         public async Task<HttpResponseData> UpdateKontrollinformasjon(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
             FunctionContext context)
         {
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-
             var endpoints = await ReadEndpointsAndCache();
 
             var response = req.CreateResponse(HttpStatusCode.OK);

@@ -79,7 +79,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<List<EndpointExternal>>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = JsonSchema.FromType<EndpointsList>().ToJson(Formatting.None)
                         }
                     },
                     AuthorizationRequirements = new List<Requirement>()

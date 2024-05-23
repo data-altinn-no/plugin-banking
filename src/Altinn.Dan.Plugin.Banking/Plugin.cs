@@ -156,21 +156,6 @@ namespace Altinn.Dan.Plugin.Banking
             return result;
         }
 
-        //Env =
-        private List<EndpointExternal> MapToExternal(List<EndpointV2> endpoints)
-        {
-            var query = from endpoint in endpoints
-                        select new EndpointExternal()
-                        {
-                            Env = _settings.UseTestEndpoints ? "test" : "prod",
-                            Name = endpoint.Navn,
-                            OrgNo = endpoint.OrgNummer,
-                            Url = _settings.UseTestEndpoints ? endpoint.EndepunktTest : endpoint.EndepunktProduksjon,
-                            Version = endpoint.Version,
-                        };
-
-            return query.ToList();
-        }
 
         [Function("OppdaterKontrollinformasjon")]
         public async Task<HttpResponseData> UpdateKontrollinformasjon(

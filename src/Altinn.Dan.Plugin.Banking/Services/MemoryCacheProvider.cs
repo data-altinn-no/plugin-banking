@@ -51,7 +51,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     Name = endpoint.Navn,
                     OrgNo = endpoint.OrgNummer,
                     Url = _settings.UseTestEndpoints ? endpoint.EndepunktTest : endpoint.EndepunktProduksjon,
-                    Version = endpoint.Version,
+                    Version = _settings.UseTestEndpoints ?
+                        (endpoint.EndepunktTest.ToUpper().Contains("V2") ? "V2" : "V1")
+                        : "V1"
                 };
 
             return query.ToList();

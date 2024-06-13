@@ -94,7 +94,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 return new BankInfo { Accounts = new List<AccountDto>(), IsImplemented = false };
 
             BankConfig bankConfig = _bankConfigs[orgnr];
-            var token = await _maskinportenService.GetToken(_settings.Certificate, bankConfig.MaskinportenEnv, _settings.ClientId, "bits:kontoinformasjon.oed", bankConfig.BankAudience);
+            var token = await _maskinportenService.GetToken(_settings.Jwk, bankConfig.MaskinportenEnv, _settings.ClientId, "bits:kontoinformasjon", bankConfig.BankAudience);
 
             bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 

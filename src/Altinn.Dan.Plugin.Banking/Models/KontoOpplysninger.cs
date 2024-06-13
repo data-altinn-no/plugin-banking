@@ -1,10 +1,13 @@
 
+using FileHelpers;
+
 public class KontoOpplysninger
 {
     public Endpoint[] endpoints { get; set; }
     public int total { get; set; }
 }
 
+[DelimitedRecord(",")]
 public class Endpoint
 {
     public string orgNo { get; set; }

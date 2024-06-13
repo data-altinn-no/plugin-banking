@@ -82,6 +82,9 @@ namespace Altinn.Dan.Plugin.Banking.Config
                 _jwk = value;
             }
         }
+        public string EndpointsResourceFile { get; set; }
+
+        public bool UseTestEndpoints { get; set; }
 
     }
 }

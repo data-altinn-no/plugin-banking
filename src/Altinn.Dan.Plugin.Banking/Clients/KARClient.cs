@@ -89,6 +89,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             {
                 urlBuilder_.Append(System.Uri.EscapeDataString("toDate") + "=").Append(System.Uri.EscapeDataString(ConvertToString(toDate, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             }
+
+            urlBuilder_.Append(System.Uri.EscapeDataString("onlyPrimaryOwner") + "=").Append(System.Uri.EscapeDataString(ConvertToString(true, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             urlBuilder_.Length--;
     
             var client_ = _httpClient;
@@ -111,7 +113,6 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                         request_.Headers.TryAddWithoutValidation("AccountInfoRequestID", ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-    
                     PrepareRequest(client_, request_, urlBuilder_);
     
                     var url_ = urlBuilder_.ToString();

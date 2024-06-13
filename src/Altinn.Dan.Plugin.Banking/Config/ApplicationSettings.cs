@@ -66,6 +66,10 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public bool UseProxy { get; set; }
 
+        public string EndpointsResourceFile { get; set; }
+
+        public bool UseTestEndpoints { get; set; }
+
         public string _jwk
         {
             get; set;
@@ -82,6 +86,5 @@ namespace Altinn.Dan.Plugin.Banking.Config
                 _jwk = value;
             }
         }
-
     }
 }

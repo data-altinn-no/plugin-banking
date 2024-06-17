@@ -87,5 +87,7 @@ namespace Altinn.Dan.Plugin.Banking.Config
                 _jwk = value;
             }
         }
+
+        public string BankScope { get; set; }
     }
 }

@@ -21,7 +21,6 @@ public partial class Bank_v2
     {
         var Aa = 1;
 
-
         if (!response.IsSuccessStatusCode)
             return;
 

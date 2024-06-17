@@ -48,53 +48,12 @@ namespace Altinn.Dan.Plugin.Banking
             _memCache = memCache;
         }
 
-        private async Task SetEndpoints()
-        {
-            try
-            {
-                if (_settings.Endpoints == null || _settings.Endpoints.endpoints?.Length < 1)
-                {
-                    var implemented = _settings.ImplementedBanks.Split(",");
-
-                    var response = await _client.GetAsync(_settings.FDKEndpointsUrl).ConfigureAwait(false);
-                    var temp = JsonConvert.DeserializeObject<KontoOpplysninger>(await response.Content.ReadAsStringAsync());
-                    var result = new KontoOpplysninger
-                    {
-                        endpoints = new Endpoint[implemented.Length]
-                    };
-
-
-                    int i = 0;
-                    if (temp != null)
-                        foreach (var ep in temp.endpoints)
-                        {
-                            if (implemented.Contains(ep.orgNo) && (!result.endpoints.Any(x => x.AreEqual(ep.orgNo))))
-                            {
-                                ep.url = _settings.UseProxy ? string.Format(string.Format(_settings.ProxyUrl, HttpUtility.HtmlEncode(ep.url.Replace("https://", "")))) : ep.url;
-                                result.endpoints[i] = ep;
-                                i++;
-                            }
-                        }
-
-                    _settings.Endpoints = result;
-                    _logger.LogInformation("Fetched list of banks from FDK: {@Banks}", _settings.Endpoints);
-
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed retrieving endpoints from the api catalogue at {FdkEndpointUrl}: {Error}", _settings.FDKEndpointsUrl, ex.Message);
-                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_METADATA_LOOKUP_ERROR, $"Failed retrieving endpoints from the api catalogue");
-            }
-        }
-
-
         [Function("Banktransaksjoner")]
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
         {
-            await SetEndpoints();
+            
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
             /* // For local debug, returns unenveloped JSON (but doesn't handle exceptions)
@@ -120,6 +79,14 @@ namespace Altinn.Dan.Plugin.Banking
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesKontrollinformasjon()
         {
+            var ecb = new EvidenceBuilder(new Metadata(), "Kontrollinformasjon");
+            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(await GetEndpoints()), "BITS", false);
+
+            return ecb.GetEvidenceValues();
+        }
+
+        private async Task<List<EndpointExternal>> GetEndpoints()
+        {
             (bool hasCachedValue, var endpoints) = await _memCache.TryGetEndpoints(ENDPOINTS_KEY);
 
             if (!hasCachedValue)
@@ -127,10 +94,7 @@ namespace Altinn.Dan.Plugin.Banking
                 endpoints = await ReadEndpointsAndCache();
             }
 
-            var ecb = new EvidenceBuilder(new Metadata(), "Kontrollinformasjon");
-            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(endpoints), "BITS", false);
-
-            return ecb.GetEvidenceValues();
+            return endpoints;
         }
 
         private async Task<List<EndpointExternal>> ReadEndpointsAndCache()
@@ -174,6 +138,8 @@ namespace Altinn.Dan.Plugin.Banking
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
 
+            var endpoints = await GetEndpoints();
+
             var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
             try
@@ -205,9 +171,19 @@ namespace Altinn.Dan.Plugin.Banking
                     throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
-                var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
+                var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item =>_settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
 
-                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, karResponse, fromDate, toDate, accountInfoRequestId, correlationId) : new() { BankAccounts = new()};
+                if (_settings.UseProxy)
+                {
+                    filteredEndpoints.ForEach(external =>
+
+                        external.Url = string.Format(_settings.ProxyUrl, Uri.EscapeDataString(external.Url.Replace("https://","").Replace("http://","")))
+                        );
+                }
+
+             var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
+
+                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, correlationId) : new() { BankAccounts = new()};
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
 
                 return ecb.GetEvidenceValues();

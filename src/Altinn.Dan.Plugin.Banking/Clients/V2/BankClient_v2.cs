@@ -1551,7 +1551,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
         [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
-        public double Amount { get; set; }
+        public decimal Amount { get; set; }
 
         [Newtonsoft.Json.JsonProperty("creditDebitIndicator", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
@@ -1566,7 +1566,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
         [Newtonsoft.Json.JsonProperty("creditLineAmount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
-        public double CreditLineAmount { get; set; }
+        public decimal CreditLineAmount { get; set; }
 
         [Newtonsoft.Json.JsonProperty("creditLineCurrency", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"[A-Z]{3,3}")]

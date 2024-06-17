@@ -90,7 +90,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                 urlBuilder_.Append(System.Uri.EscapeDataString("toDate") + "=").Append(System.Uri.EscapeDataString(ConvertToString(toDate, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             }
 
-            urlBuilder_.Append(System.Uri.EscapeDataString("onlyPrimaryOwner") + "=").Append(System.Uri.EscapeDataString(ConvertToString(true, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            urlBuilder_.Append(System.Uri.EscapeDataString("onlyPrimaryOwner") + "=").Append(System.Uri.EscapeDataString(ConvertToString(false, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
             urlBuilder_.Length--;
     
             var client_ = _httpClient;

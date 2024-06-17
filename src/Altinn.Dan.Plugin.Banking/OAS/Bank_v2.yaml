@@ -1,0 +1,1505 @@
+openapi: 3.0.0
+info:
+  title: Accounts API
+  description: |-
+    Open API technical specification of the common standard for Account APIs.   
+
+    The full functional description of the input and output parameters is to be found on Git on:
+     [Data model](https://bitsnorge.github.io/dsop-documentation/dsop_kontroll_datamodel.html).
+     
+    It is the data providers responsibility to validate all requests for data and to make sure that all requests are validated well enough according to the solution. See some [recommendations regarding validation of requests in Control API](https://bitsnorge.github.io/dsop-documentation/dsop_kontroll_validation.html). Some of those recommandations are generic accross the different implementations while other are specific to a given Data Consumer and legal mandate.
+  version: 2.0.0
+servers:
+  - url: 'https://hostname.no/v2'
+security:
+  - accountsAuth: []
+paths:
+  /accounts:
+    get:
+      tags:
+        - accounts
+      summary: List of accounts for a specified party and period. Account number can be provided in place of the party identifier for lookup requests directly on the account. Must provide a blank list if no hits.
+      operationId: listAccounts
+      parameters:
+        - name: AccountInfoRequestID
+          in: header
+          description: 'Unique reference number / case number that follows the case throughout the different requests.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: CorrelationID
+          in: header
+          description: 'Correlation ID, unique identifier for the technical request.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: Legal-Mandate
+          in: header
+          description: 'The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: PartyID
+          in: header
+          description: 'Parts identifier, personal identification number, D-number or organization number.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: OnlyPrimaryOwner 
+          in: query
+          description: 'Only returns accounts owned by PartyID if TRUE.'
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: boolean
+        - name: AdditionalReferenceID
+          in: header
+          description: 'Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceIDType
+          in: header
+          description: 'What type of reference to expect in AdditionalReferenceID.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            enum:
+              - pol1
+              - srf
+        - name: RequesterID
+          in: header
+          description: 'Unique identifier of the user who makes the request at the public agency.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          description: 'From date, current date if not stated.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: 'To date, current date if not stated.'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Valid response - A list of accounts - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accounts'
+            application/jose:
+              schema:
+                $ref: '#/components/schemas/Accounts'
+        '400':
+          description: ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '405':
+          description: ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
+        '406':
+          description: ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+        '429':
+          description: ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        default:
+          description: Best possible description of the error from Data Provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/accounts/{accountReference}':
+    get:
+      tags:
+        - accounts
+      summary: 'Account details, including balances, for a specific account'
+      operationId: showAccountById
+      parameters:
+        - name: accountReference
+          in: path
+          description: Unique reference to the account. Shall match the account number.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AccountInfoRequestID
+          in: header
+          description: 'Unique reference number / case number that follows the case throughout the different requests.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: CorrelationID
+          in: header
+          description: 'Correlation ID, unique identifier for the technical request'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: Legal-Mandate
+          in: header
+          description: 'The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceID
+          in: header
+          description: 'Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceIDType
+          in: header
+          description: 'What type of reference to expect in AdditionalReferenceID'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            enum:
+              - pol1
+              - srf
+        - name: RequesterID
+          in: header
+          description: 'Unique identifier of the user who makes the request at the public agency.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          description: 'From date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: 'To date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Valid response - Account details - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetails'
+            application/jose:
+              schema:
+                $ref: '#/components/schemas/AccountDetails'
+        '400':
+          description: ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '405':
+          description: ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
+        '406':
+          description: ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+        '429':
+          description: ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        default:
+          description: Best possible description of the error from Data Provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/accounts/{accountReference}/transactions':
+    get:
+      tags:
+        - transactions
+      summary: Transactions for specified account and period. Empty list if no hits. Must support pagination on large result sets (min 1000) - see separate description in the link element.
+      operationId: listTransactions
+      parameters:
+        - name: accountReference
+          in: path
+          description: Unique reference to the account. Shall match the account number.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AccountInfoRequestID
+          in: header
+          description: 'Unique reference number / case number that follows the case throughout the different requests.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: CorrelationID
+          in: header
+          description: 'Correlation ID, unique identifier for the technical request'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: Legal-Mandate
+          in: header
+          description: 'The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceID
+          in: header
+          description: 'Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceIDType
+          in: header
+          description: 'What type of reference to expect in AdditionalReferenceID'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            enum:
+              - pol1
+              - srf
+        - name: RequesterID
+          in: header
+          description: 'Unique identifier of the user who makes the request at the public agency.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string              
+        - name: fromDate
+          in: query
+          description: 'From date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: 'To date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Valid response - A list of transactions - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+            application/jose:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+        '400':
+          description: ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '405':
+          description: ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
+        '406':
+          description: ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+        '429':
+          description: ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        default:
+          description: Best possible description of the error from Data Provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/accounts/{accountReference}/cards':
+    get:
+      tags:
+        - cards
+      summary: List of cards associated with the specified account. Empty list if no hits.
+      operationId: listCards
+      parameters:
+        - name: accountReference
+          in: path
+          description: Unique reference to the account. Shall not match the account number.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AccountInfoRequestID
+          in: header
+          description: 'Unique reference number / case number that follows the case throughout the different requests.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: CorrelationID
+          in: header
+          description: 'Correlation ID, unique identifier for the technical request'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: Legal-Mandate
+          in: header
+          description: 'The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceID
+          in: header
+          description: 'Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceIDType
+          in: header
+          description: 'What type of reference to expect in AdditionalReferenceID'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            enum:
+              - pol1
+              - srf
+        - name: RequesterID
+          in: header
+          description: 'Unique identifier of the user who makes the request at the public agency.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          description: 'From date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: 'To date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Valid response - List of cards associated with an account - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cards'
+            application/jose:
+              schema:
+                $ref: '#/components/schemas/Cards'
+        '400':
+          description: ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '405':
+          description: ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
+        '406':
+          description: ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+        '429':
+          description: ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        default:
+          description: Best possible description of the error from Data Provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/accounts/{accountReference}/roles':
+    get:
+      tags:
+        - roles
+      summary: Role holders for the specified account. Empty list if no hits.
+      operationId: listRoles
+      parameters:
+        - name: accountReference
+          in: path
+          description: Unique reference to the account. Shall not match the account number.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AccountInfoRequestID
+          in: header
+          description: 'Unique reference number / case number that follows the case throughout the different requests.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: CorrelationID
+          in: header
+          description: 'Correlation ID, unique identifier for the technical request'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+        - name: Legal-Mandate
+          in: header
+          description: 'The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.'
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceID
+          in: header
+          description: 'Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: AdditionalReferenceIDType
+          in: header
+          description: 'What type of reference to expect in AdditionalReferenceID'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            enum:
+              - pol1
+              - srf
+        - name: RequesterID
+          in: header
+          description: 'Unique identifier of the user who makes the request at the public agency.'
+          required: false
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          description: 'From date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: 'To date, current date if not stated'
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: date
+      responses:
+      
+        '200':
+          description: Valid response - A list of roles - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Roles'
+            application/jose:
+              schema:
+                $ref: '#/components/schemas/Roles'
+        '400':
+          description: ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '405':
+          description: ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error405'
+        '406':
+          description: ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+        '429':
+          description: ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        default:
+          description: Best possible description of the error from Data Provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Account:
+      required:
+        - accountIdentifier
+        - accountReference
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: '#/components/schemas/AccountStatus'
+        servicer:
+          allOf:
+            - $ref: '#/components/schemas/FinancialInstitution'
+        accountIdentifier:
+          $ref: '#/components/schemas/AccountNumber'
+        accountReference:
+          $ref: '#/components/schemas/AccountReference'
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+        primaryOwner:
+          $ref: '#/components/schemas/AccountRole'
+        name:
+          maxLength: 70
+          minLength: 1
+          type: string
+    AccountDetail:
+      required:
+        - accountIdentifier
+        - accountReference
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: '#/components/schemas/AccountStatus'
+        servicer:
+          allOf:
+            - $ref: '#/components/schemas/FinancialInstitution'
+        accountIdentifier:
+          $ref: '#/components/schemas/AccountNumber'
+        accountReference:
+          $ref: '#/components/schemas/AccountReference'     
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+        name:
+          maxLength: 70
+          minLength: 1
+          type: string
+        balances:
+          minItems: 0
+          type: array
+          items:
+            $ref: '#/components/schemas/Balance'
+        primaryOwner:
+          $ref: '#/components/schemas/AccountRole'
+        startDate:
+          $ref: '#/components/schemas/ISODate'
+        endDate:
+          $ref: '#/components/schemas/ISODate'         
+    AccountDetails:
+      required:
+        - responseDetails
+      type: object
+      properties:
+        responseDetails:
+          allOf:
+            - $ref: '#/components/schemas/ResponseDetails'
+        account:
+          allOf:
+            - $ref: '#/components/schemas/AccountDetail'
+      xml:
+        name: accounts
+    AccountNumber:
+      type: string
+    AccountPermissionType:
+      type: string
+      enum:
+        - rightToUseAlone
+        - rightToUseWithOther
+        - rightToSeeOnly
+    AccountRole:
+      type: object
+      properties:
+        permission:
+          allOf:
+            - $ref: '#/components/schemas/AccountPermissionType'
+        identifier:
+          $ref: '#/components/schemas/Identifier'
+        name:
+          maxLength: 140
+          minLength: 1
+          type: string
+        startDate:
+          $ref: '#/components/schemas/ISODate'
+        endDate:
+          $ref: '#/components/schemas/ISODate'
+    AccountReference:
+      type: string
+    Accounts:
+      required:
+        - responseDetails
+      type: object
+      properties:
+        responseDetails:
+          allOf:
+            - $ref: '#/components/schemas/ResponseDetails'
+        accounts:
+          minItems: 0
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        links:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Link'
+      xml:
+        name: accounts
+    AccountStatus:
+      type: string
+      enum:
+        - enabled
+        - disabled
+        - deleted
+    AccountType:
+      type: string
+      enum:
+        - loanAccount
+        - salaryAccount
+        - currencyAccount
+        - savingsAccount
+        - clientAccount
+        - taxDeductionAccount
+        - businessAccount
+        - creditCardAccount
+        - prepaidCardAccount
+        - accountWithoutBalance
+        - otherAccount
+    AddressType:
+      type: string
+      enum:
+        - residential
+        - business
+        - mailTo
+        - deliveryTo
+    Amount:
+      minimum: 0
+      exclusiveMinimum: false
+      type: number
+    Balance:
+      type: object
+      properties:
+        creditLineIncluded:
+          allOf:
+            - $ref: '#/components/schemas/TrueFalseIndicator'
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/Amount'
+        creditDebitIndicator:
+          allOf:
+            - $ref: '#/components/schemas/CreditOrDebit'
+        registered:
+          allOf:
+          - $ref: '#/components/schemas/ISODateTime'
+        type:
+          $ref: '#/components/schemas/BalanceType'
+        creditLineAmount:
+          $ref: '#/components/schemas/Amount'
+        creditLineCurrency:
+          $ref: '#/components/schemas/CurrencyCode'
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+    BalanceType:
+      type: string
+      enum:
+        - availableBalance
+        - bookedBalance
+    BankTransactionCode:
+      type: object
+      properties:
+        domain:
+          allOf:
+            - $ref: '#/components/schemas/DomainType'
+        family:
+          allOf:
+            - $ref: '#/components/schemas/FamilyType'
+        subFamily:
+          allOf:
+            - $ref: '#/components/schemas/SubFamilyType'
+        freeText:
+          maxLength: 500
+          minLength: 1
+          type: string
+    CardNumber:
+      type: string
+    Cards:
+      required:
+        - responseDetails
+      type: object
+      properties:
+        responseDetails:
+          allOf:
+            - $ref: '#/components/schemas/ResponseDetails'
+        paymentCards:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/PaymentCard'
+      xml:
+        name: cards
+    CardStatus:
+      type: string
+      enum:
+        - active
+        - blocked
+    CardType:
+      type: string
+      enum:
+        - debitCard 
+        - creditCard
+    CounterParty:
+      type: object
+      properties:
+        accountIdentifier:
+          $ref: '#/components/schemas/AccountNumber'
+        identifier:
+          $ref: '#/components/schemas/Identifier'
+        name:
+          maxLength: 140
+          minLength: 1
+          type: string
+        type:
+          $ref: '#/components/schemas/CounterPartyType'
+        postalAddress:
+          $ref: '#/components/schemas/PostalAddress'
+    CounterPartyType:
+      type: string
+      enum:
+        - debtor
+        - creditor
+        - ultimateDebtor
+        - ultimateCreditor
+    CountryCode:
+      pattern: '[A-Z]{2,2}'
+      type: string
+    CreditOrDebit:
+      type: string
+      enum:
+        - credit
+        - debit
+    CurrencyCode:
+      pattern: '[A-Z]{3,3}'
+      type: string
+    CurrencyExchange:
+      type: object
+      properties:
+        originalAmount:
+          allOf:
+            - $ref: '#/components/schemas/Amount'
+        sourceCurrency:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyCode'
+        targetCurrency:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyCode'
+        unitCurrency:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyCode'
+        exchangeRate:
+          $ref: '#/components/schemas/Amount'
+    DomainType:
+      type: string
+      enum:
+        - accountManagement
+        - cashManagement
+        - foreignExchange
+        - payments
+        - securities
+        - tradeServices
+        - extended
+    FamilyType:
+      type: string
+      enum:
+        - additionalMiscellaneousCreditOperations
+        - additionalMiscellaneousDebitOperations
+        - miscellaneousCreditOperations
+        - miscellaneousDebitOperations
+        - openingAndClosing
+        - accountBalancing
+        - cashPooling
+        - notAvailable
+        - customerCardTransactions
+        - counterTransactions
+        - drafts
+        - issuedCashConcentrationTransactions
+        - issuedCreditTransfers
+        - issuedCheques
+        - issuedDirectDebits
+        - lockboxTransactions
+        - merchantCardTransactions
+        - other
+        - receivedCashConcentrationTransactions
+        - receivedCreditTransfers
+        - receivedCheques
+        - receivedDirectDebits
+        - corporateAction
+        - documentaryCollection
+        - standByLetterOfCredit
+    FinancialInstitution:
+      type: object
+      properties:
+        identifier:
+          $ref: '#/components/schemas/Identifier'
+        name:
+          maxLength: 140
+          minLength: 1
+          type: string
+    Identifier:
+      required:
+        - type
+        - value
+      type: object
+      properties:
+        countryOfResidence:
+          allOf:
+            - $ref: '#/components/schemas/CountryCode'
+        value:
+          type: string
+        type:
+          $ref: '#/components/schemas/IdentifierType'
+    IdentifierType:
+      type: string
+      enum:
+        - countryIdentificationCode
+        - nationalIdentityNumber
+    ISODate:
+      type: string
+      format: date
+    ISODateTime:
+      type: string
+      format: date-time
+    ISOYearMonth:
+      pattern: '^[0-9]+-([0][1-9]|1[0-2])$'
+      type: string
+    Link:
+      required:
+        - href
+        - rel
+      type: object
+      properties:
+        rel:
+          maxLength: 50
+          minLength: 1
+          type: string
+        href:
+          maxLength: 500
+          minLength: 1
+          type: string
+    PaymentCard:
+      required:
+        - cardIdentifier
+      type: object
+      properties:
+        cardIdentifier:
+          allOf:
+            - $ref: '#/components/schemas/CardNumber'
+        holderName:
+          maxLength: 140
+          minLength: 1
+          type: string
+        startDate:
+          allOf:
+            - $ref: '#/components/schemas/ISOYearMonth'
+        expiryDate:
+          allOf:
+            - $ref: '#/components/schemas/ISOYearMonth'
+        cardIssuerName:
+          maxLength: 140
+          minLength: 1
+          type: string
+        type:
+          $ref: '#/components/schemas/CardType'
+        cardStatus:
+          $ref: '#/components/schemas/CardStatus'
+        versionNumber:
+          maxLength: 1
+          minLength: 1
+          type: string
+        cardIssuerIdentifier:
+          $ref: '#/components/schemas/Identifier'
+    PostalAddress:
+      type: object
+      properties:
+        postCode:
+          maxLength: 16
+          minLength: 1
+          type: string
+        type:
+          $ref: '#/components/schemas/AddressType'
+        streetName:
+          maxLength: 70
+          minLength: 1
+          type: string
+        buildingNumber:
+          maxLength: 16
+          minLength: 1
+          type: string
+        townName:
+          maxLength: 35
+          minLength: 1
+          type: string
+        country:
+          $ref: '#/components/schemas/CountryCode'
+        addressLines:
+          minItems: 0
+          type: array
+          items:
+            maxLength: 70
+            minLength: 1
+            type: string
+    ResponseDetails:
+      required:
+        - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - partial
+            - complete
+        message:
+          maxLength: 500
+          minLength: 1
+          type: string
+    Roles:
+      required:
+        - responseDetails
+      type: object
+      properties:
+        responseDetails:
+          allOf:
+            - $ref: '#/components/schemas/ResponseDetails'
+        roles:
+          minItems: 0
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountRole'
+      xml:
+        name: roles
+    SubFamilyType:
+      type: string
+      enum:
+        - valueDate
+        - chargesGeneric
+        - commissions
+        - interestsGeneric
+        - other
+        - accountClosing
+        - notAvailable
+        - sweeping
+        - topping
+        - zeroBalancing
+        - cashWithdrawal
+        - debitCardPayment
+        - crossBorderCashWithdrawal
+        - cashDeposit
+        - debitAdjustmentGeneric
+        - travellersChequesDeposit
+        - settlementAtMaturity
+        - intraCompanyTransfer
+        - corporateOwnAccountTransfer
+        - crossBorderIntraCompanyTransfer
+        - achDebit
+        - achReturn
+        - achTransactionAtxn
+        - automaticTransfer
+        - bankCheque
+        - booked
+        - domesticCreditTransfer
+        - dividend
+        - sepaCreditTransfer
+        - financialInstitutionCreditTransfer
+        - principalPayment
+        - priorityCreditTransfer
+        - reversalDueToPaymentReturn
+        - achTransactionSala
+        - sameDayValueCreditTransfer
+        - standingOrder
+        - taxes
+        - creditTransferWithAgreedCommercialInformation
+        - crossBorderCreditTransfer
+        - cashLetter
+        - cheques
+        - chequesReversal
+        - openCheque
+        - unpaidCheque
+        - crossBorderCheque
+        - sepaCoreDirectDebit
+        - directDebitPayment
+        - reversalDueToPayment
+        - reversalDueToPaymentCancellationRequest
+        - reversalDueToReturnUnpaidDirectDebit
+        - debit
+        - deposit
+        - adjustments
+        - fees
+        - creditCardPayment
+        - pointOfSalePosPayment
+        - creditAdjustment
+        - settlementAfterCollection
+    Transaction:
+      required:
+        - transactionIdentifier
+      type: object
+      properties:
+        transactionIdentifier:
+          type: string
+        references:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/TransactionReference'
+        creditDebitIndicator:
+          allOf:
+            - $ref: '#/components/schemas/CreditOrDebit'
+        reversalIndicator:
+          allOf:
+            - $ref: '#/components/schemas/TrueFalseIndicator'
+        status:
+          allOf:
+            - $ref: '#/components/schemas/TransactionStatus'
+        transactionCode:
+          allOf:
+            - $ref: '#/components/schemas/BankTransactionCode'
+        bookingDate:
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        valueDate:
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        counterParties:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/CounterParty'
+        additionalInfo:
+          maxLength: 500
+          minLength: 1
+          type: string
+        currencyExchange:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyExchange'
+        merchant:
+          maxLength: 140
+          minLength: 1
+          type: string
+        paymentCard:
+          allOf:
+            - $ref: '#/components/schemas/PaymentCard'
+        registered:
+          allOf:
+            - $ref: '#/components/schemas/ISODateTime'
+        amount:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/CurrencyCode'
+    TransactionReference:
+      required:
+        - type
+        - value
+      type: object
+      properties:
+        value:
+          type: string
+        type:
+          $ref: '#/components/schemas/TransactionReferenceType'
+    TransactionReferenceType:
+      type: string
+      enum:
+        - accountServicerReference
+        - archiveReference
+        - chequeNumber
+        - endToEndIdentification
+        - instructionIdentification
+        - invoiceNumber
+        - mandateIdentification
+        - messageIdentification
+        - otherReference
+        - paymentInformationIdentification
+        - remittanceReference
+    TransactionStatus:
+      type: string
+      enum:
+        - booked
+        - pending
+        - info
+    Transactions:
+      required:
+        - responseDetails
+      type: object
+      properties:
+        responseDetails:
+          allOf:
+            - $ref: '#/components/schemas/ResponseDetails'
+        transactions:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Transaction'
+        links:
+          minItems: 0
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Link'
+      xml:
+        name: transactions
+    TrueFalseIndicator:
+      type: boolean
+    Error400:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-001
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider.
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 400 (Bad Request)
+    Error401:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-010
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider.
+          example: Best possible error description from Data Providers regarding missing authentication information.
+      description: Error structure for error message 401 (Unauthorized)
+    Error403:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-011
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible error description from Data Providers telling that the Data Consumer is not authorized for the requested service.
+      description: Error structure for error message 403 (Forbidden)
+    Error404:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-002 or ACC-003
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 404 (Not Found)
+    Error405:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-012
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 405 (Method Not Allowed)
+    Error406:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-013
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 406 (Not acceptable)
+    Error429:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-022
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 429 (Too Many Requests)
+    Error500:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-100 or ACC-500
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for error message 500 (Internal Server Error)
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 'error code, for automatic handling'
+          example: ACC-0xx
+        message:
+          type: string
+          description: Best possible description of the error from Data Provider
+          example: Best possible description of the error from Data Provider.
+      description: Error structure for all error messages
+  securitySchemes:
+    accountsAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Access token (JWT)

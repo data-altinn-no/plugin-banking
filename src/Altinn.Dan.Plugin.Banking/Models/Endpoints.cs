@@ -16,6 +16,7 @@ namespace Altinn.Dan.Plugin.Banking.Models
         public string OrgNummer { get; set; }
 
         [FieldOptional]
+        [FieldQuoted(QuoteMode.OptionalForBoth)]
         public string Navn { get; set; }
 
         [FieldOptional]

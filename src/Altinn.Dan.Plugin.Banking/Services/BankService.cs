@@ -56,6 +56,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     BankInfo bankInfo;
                     try
                     {
+                        bankList.ForEach(bank =>
+                        _logger.LogInformation($"Preparing request to bank {bank.Name} with url {bank.Url} and version {bank.Version}")
+                            );
                         bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId);
                     }
                     catch (Exception e)

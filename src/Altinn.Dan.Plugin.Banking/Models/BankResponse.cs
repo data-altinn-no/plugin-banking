@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Altinn.Dan.Plugin.Banking.Clients.V2;
-using AccountDetail = Altinn.Dan.Plugin.Banking.Clients.AccountDetail;
-using Transaction = Altinn.Dan.Plugin.Banking.Clients.Transaction;
 using AccountDetailV2 = Altinn.Dan.Plugin.Banking.Clients.V2.AccountDetail;
 using TransactionV2 = Altinn.Dan.Plugin.Banking.Clients.V2.Transaction;
 namespace Altinn.Dan.Plugin.Banking.Models
@@ -16,7 +14,7 @@ namespace Altinn.Dan.Plugin.Banking.Models
     {
         public string BankName { get; set; }
         public bool IsImplemented { get; set; } = true;
-        public List<Account> Accounts { get; set; }
+        public List<AccountV2> Accounts { get; set; }
         public Exception Exception { get; set; } = null;
     }
 

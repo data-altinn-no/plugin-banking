@@ -4,6 +4,8 @@
 // </auto-generated>
 //----------------------
 
+
+/*
 #pragma warning disable 108 // Disable "CS0108 '{derivedDto}.ToJson()' hides inherited member '{dtoBase}.ToJson()'. Use the new keyword if hiding was intended."
 #pragma warning disable 114 // Disable "CS0114 '{derivedDto}.RaisePropertyChanged(String)' hides inherited member 'dtoBase.RaisePropertyChanged(String)'. To make the current member override that implementation, add the override keyword. Otherwise add the new keyword."
 #pragma warning disable 472 // Disable "CS0472 The result of the expression is always 'false' since a value of type 'Int32' is never equal to 'null' of type 'Int32?'
@@ -15,6 +17,7 @@
 namespace Altinn.Dan.Plugin.Banking.Clients
 {
     using Altinn.Dan.Plugin.Banking.Exceptions;
+    using System;
     using System = global::System;
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.13.2.0 (NJsonSchema v10.5.2.0 (Newtonsoft.Json v11.0.0.0))")]
@@ -103,21 +106,26 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                 {
                     if (accountInfoRequestID == null)
                         throw new System.ArgumentNullException("accountInfoRequestID");
-                    request_.Headers.TryAddWithoutValidation("AccountInfoRequestID", ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
+                    request_.Headers.TryAddWithoutValidation("AccountInfoRequestID",
+                        ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
                     if (correlationID == null)
                         throw new System.ArgumentNullException("correlationID");
-                    request_.Headers.TryAddWithoutValidation("CorrelationID", ConvertToString(correlationID, System.Globalization.CultureInfo.InvariantCulture));
+                    request_.Headers.TryAddWithoutValidation("CorrelationID",
+                        ConvertToString(correlationID, System.Globalization.CultureInfo.InvariantCulture));
                     if (legal_Mandate == null)
                         throw new System.ArgumentNullException("legal_Mandate");
-                    request_.Headers.TryAddWithoutValidation("Legal-Mandate", ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
+                    request_.Headers.TryAddWithoutValidation("Legal-Mandate",
+                        ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
                     if (partyID != null)
                         request_.Headers.TryAddWithoutValidation("PartyID", ConvertToString(partyID, System.Globalization.CultureInfo.InvariantCulture));
                     if (accountID != null)
                         request_.Headers.TryAddWithoutValidation("AccountID", ConvertToString(accountID, System.Globalization.CultureInfo.InvariantCulture));
                     if (additionalReferenceID != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceID", ConvertToString(additionalReferenceID, System.Globalization.CultureInfo.InvariantCulture));
+                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceID",
+                            ConvertToString(additionalReferenceID, System.Globalization.CultureInfo.InvariantCulture));
                     if (additionalReferenceIDType != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceIDType", ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
+                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceIDType",
+                            ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
@@ -128,7 +136,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients
 
                     PrepareRequest(client_, request_, url_);
 
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                        .ConfigureAwait(false);
                     var disposeResponse_ = true;
                     try
                     {
@@ -149,67 +158,80 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
+
                             return objectResponse_.Object;
                         }
-                        else
-                        if (status_ == 400)
+                        else if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error400>(
+                                "ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
-                        else
-                        if (status_ == 401)
+                        else if (status_ == 401)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error401>(
+                                "ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
-                        else
-                        if (status_ == 403)
+                        else if (status_ == 403)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error403>(
+                                "ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
-                        else
-                        if (status_ == 405)
+                        else if (status_ == 405)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error405>(
+                                "ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
-                        else
-                        if (status_ == 429)
+                        else if (status_ == 429)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error429>(
+                                "ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
-                        else
-                        if (status_ == 500)
+                        else if (status_ == 500)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error500>(
+                                "ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-spesification for the different ACC codes.",
+                                status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -218,7 +240,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider.", status_, objectResponse_.Text, headers_,
+                                objectResponse_.Object, null);
                         }
                     }
                     finally
@@ -227,6 +251,11 @@ namespace Altinn.Dan.Plugin.Banking.Clients
                             response_.Dispose();
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new Accounts();
             }
             finally
             {
@@ -2537,3 +2566,4 @@ namespace Altinn.Dan.Plugin.Banking.Clients
 #pragma warning restore  114
 #pragma warning restore  108
 #pragma warning restore 3016
+*/

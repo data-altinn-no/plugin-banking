@@ -31,8 +31,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public static string DecryptCert { get; set; }
 
-        public string FDKEndpointsUrl { get; set; }
-
         public KontoOpplysninger Endpoints { get; set; }
 
         public string ImplementedBanks { get; set; }
@@ -89,5 +87,21 @@ namespace Altinn.Dan.Plugin.Banking.Config
         }
 
         public string BankScope { get; set; }
+
+        private string _githubPAT { get; set; }
+
+        public string GithubPATName { get; set; }
+
+        public string GithubPAT
+        {
+            get
+            {
+                return _githubPAT ?? new PluginKeyVault(KeyVaultName).Get(GithubPATName).Result;
+            }
+            set
+            {
+                _githubPAT = value;
+            }
+        }
     }
 }

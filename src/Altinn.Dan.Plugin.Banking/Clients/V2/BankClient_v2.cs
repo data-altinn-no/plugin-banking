@@ -4,6 +4,9 @@
 // </auto-generated>
 //----------------------
 
+using Altinn.Dan.Plugin.Banking.Config;
+using Microsoft.Extensions.Options;
+
 #pragma warning disable 108 // Disable "CS0108 '{derivedDto}.ToJson()' hides inherited member '{dtoBase}.ToJson()'. Use the new keyword if hiding was intended."
 #pragma warning disable 114 // Disable "CS0114 '{derivedDto}.RaisePropertyChanged(String)' hides inherited member 'dtoBase.RaisePropertyChanged(String)'. To make the current member override that implementation, add the override keyword. Otherwise add the new keyword."
 #pragma warning disable 472 // Disable "CS0472 The result of the expression is always 'false' since a value of type 'Int32' is never equal to 'null' of type 'Int32?'
@@ -28,12 +31,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 #pragma warning restore 8618
 
         private System.Net.Http.HttpClient _httpClient;
+        private readonly ApplicationSettings _appSettings;
         private static System.Lazy<Newtonsoft.Json.JsonSerializerSettings> _settings = new System.Lazy<Newtonsoft.Json.JsonSerializerSettings>(CreateSerializerSettings, true);
 
-        public Bank_v2(System.Net.Http.HttpClient httpClient)
+        public Bank_v2(System.Net.Http.HttpClient httpClient, ApplicationSettings appSettings)
         {
             BaseUrl = "https://hostname.no/v2";
             _httpClient = httpClient;
+            _appSettings = appSettings;
         }
 
         private static Newtonsoft.Json.JsonSerializerSettings CreateSerializerSettings()
@@ -121,7 +126,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
                     if (legal_Mandate == null)
                         throw new System.ArgumentNullException("legal_Mandate");
-                    request_.Headers.TryAddWithoutValidation("Legal-Mandate", ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
+                    request_.Headers.TryAddWithoutValidation("Legal-Mandate", legal_Mandate);
 
                     if (partyID == null)
                         throw new System.ArgumentNullException("partyID");
@@ -136,7 +141,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                     if (requesterID != null)
                         request_.Headers.TryAddWithoutValidation("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
@@ -1180,7 +1185,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
             public string Text { get; }
         }
 
-        public bool ReadResponseAsString { get; set; }
+        public bool ReadResponseAsString { get; set; } = true;
 
         protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken)
         {

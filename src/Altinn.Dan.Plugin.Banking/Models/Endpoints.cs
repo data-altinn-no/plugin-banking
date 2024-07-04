@@ -12,36 +12,13 @@ namespace Altinn.Dan.Plugin.Banking.Models
     [IgnoreFirst]
     public class EndpointV2
     {
-        [FieldOptional]
         public string OrgNummer { get; set; }
 
-        [FieldOptional]
         [FieldQuoted(QuoteMode.OptionalForBoth)]
         public string Navn { get; set; }
 
-        [FieldOptional]
-        [FieldValueDiscarded]
-        public string Filnavn { get; set; }
+        public string Url { get; set; }
 
-        [FieldOptional]
-        public string EndepunktProduksjon { get; set; }
-
-        [FieldOptional]
-        public string EndepunktTest { get; set; }
-
-        [FieldOptional]
-        [FieldValueDiscarded]
-        public string Id { get; set; }
-
-        [FieldOptional]
-        [FieldValueDiscarded]
-        public string TestId { get; set; }
-
-        [FieldOptional]
-        [FieldValueDiscarded]
-        public string TestId2 { get; set; }
-
-        [FieldOptional]
         public string Version { get; set; }
     }
 

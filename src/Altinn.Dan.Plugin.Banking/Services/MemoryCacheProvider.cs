@@ -48,12 +48,10 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 select new EndpointExternal()
                 {
                     Env = _settings.UseTestEndpoints ? "test" : "prod",
+                    Url = endpoint.Url,
                     Name = endpoint.Navn,
                     OrgNo = endpoint.OrgNummer,
-                    Url = _settings.UseTestEndpoints ? endpoint.EndepunktTest : endpoint.EndepunktProduksjon,
-                    Version = _settings.UseTestEndpoints ?
-                        (endpoint.EndepunktTest.ToUpper().Contains("V2") ? "V2" : "V1")
-                        : "V1"
+                    Version = endpoint.Version,
                 };
 
             return query.ToList();

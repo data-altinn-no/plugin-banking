@@ -201,7 +201,7 @@ namespace Altinn.Dan.Plugin.Banking
                 var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item =>_settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
 
                 //We are only legally allowed to use endpoints with version V2 due to the onlyPrimaryOwner flag
-                filteredEndpoints.RemoveAll(p => p.Version == "V1");
+                filteredEndpoints.RemoveAll(p => p.Version.ToUpper() == "V1");
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
 

@@ -55,7 +55,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     try
                     {
                         bankList.ForEach(bank =>
-                        _logger.LogInformation($"Preparing request to bank {bank.Name} with url {bank.Url} and version {bank.Version}")
+                        _logger.LogInformation($"Preparing request to bank {bank.Name} with url {bank.Url} and version {bank.Version} and accountinforequestid {accountInfoRequestId} and correlationid {correlationId}")
                             );
                         bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId);
                     }
@@ -110,6 +110,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
+            _logger.LogInformation("Found {0} accounts for {1} in bank {2}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr);
             return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, correlationId); //application/jose
         }
         private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, Guid correlationId)

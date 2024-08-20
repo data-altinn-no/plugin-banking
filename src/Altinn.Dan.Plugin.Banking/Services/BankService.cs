@@ -111,9 +111,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
             _logger.LogInformation("Found {0} accounts for {1} in bank {2}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr);
-            return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, correlationId); //application/jose
+            return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, correlationId, fromDate, toDate); //application/jose
         }
-        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, Guid correlationId)
+        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, Guid correlationId, DateTimeOffset? fromDate, DateTimeOffset? toDate)
         {
 
             BankInfo bankInfo = new BankInfo() { Accounts = new List<AccountDtoV2>() };
@@ -126,12 +126,12 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     var transactionsTimeout =
                         new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
                     var transactionsTask = bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
-                        correlationId, "OED", null, null, null, DateTime.Now.AddMonths(-3), DateTime.Now, transactionsTimeout.Token);
+                        correlationId, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
 
                     var detailsTimeout =
                         new CancellationTokenSource(TimeSpan.FromSeconds(AccountDetailsRequestTimeoutSecs));
                     var details = await bankClient.ShowAccountByIdAsync(account.AccountReference, accountInfoRequestId,
-                        correlationId, "OED", null, null, null, DateTime.Now.AddMonths(-3) , DateTime.Now, detailsTimeout.Token);
+                        correlationId, "OED", null, null, null, fromDate , toDate, detailsTimeout.Token);
 
                     if (details.Account == null)
                     {

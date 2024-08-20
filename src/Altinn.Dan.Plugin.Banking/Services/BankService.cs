@@ -23,9 +23,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
         private readonly ILogger<BankService> _logger;
         private readonly ApplicationSettings _settings;
 
-        private const int TransactionRequestTimeoutSecs = 10;
-        private const int AccountDetailsRequestTimeoutSecs = 10;
-        private const int AccountListRequestTimeoutSecs = 10;
+        private const int TransactionRequestTimeoutSecs = 30;
+        private const int AccountDetailsRequestTimeoutSecs = 30;
+        private const int AccountListRequestTimeoutSecs = 30;
 
         private static Dictionary<string, BankConfig> _bankConfigs;
         private static readonly object LockObject = new();

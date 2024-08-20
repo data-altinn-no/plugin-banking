@@ -61,7 +61,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     }
                     catch (Exception e)
                     {
-                        bankInfo = new BankInfo { Exception = e, Accounts = new List<AccountDtoV2>() };
+                        bankInfo = new BankInfo { Accounts = new List<AccountDtoV2>() };
                         _logger.LogError(
                             "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
                              name, orgnr, ssn[..6], e.Message, accountInfoRequestId, correlationId);

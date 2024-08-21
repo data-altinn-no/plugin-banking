@@ -182,6 +182,9 @@ namespace Altinn.Dan.Plugin.Banking
 
                 bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
 
+                //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
+                accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
+
                 KARResponse karResponse;
                 try
                 {
@@ -205,7 +208,7 @@ namespace Altinn.Dan.Plugin.Banking
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
 
-                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, correlationId) : new() { BankAccounts = new()};
+                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new()};
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
 
                 return ecb.GetEvidenceValues();

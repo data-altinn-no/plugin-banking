@@ -58,6 +58,12 @@ namespace Altinn.Dan.Plugin.Banking
                             EvidenceParamName = "SkipKAR",
                             ParamType = EvidenceParamType.Boolean,
                             Required = false
+                        },
+                        new EvidenceParameter()
+                        {
+                            EvidenceParamName = "ReferanseId",
+                            ParamType = EvidenceParamType.String,
+                            Required = true
                         }
                     },
                     AuthorizationRequirements = new List<Requirement>()

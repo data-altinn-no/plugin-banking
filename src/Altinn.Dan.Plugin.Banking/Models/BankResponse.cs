@@ -15,7 +15,8 @@ namespace Altinn.Dan.Plugin.Banking.Models
         public string BankName { get; set; }
         public bool IsImplemented { get; set; } = true;
         public List<AccountV2> Accounts { get; set; }
-        //public Exception Exception { get; set; } = null;
+
+        public bool HasErrors { get; set; } = false;
     }
 
     public class Account

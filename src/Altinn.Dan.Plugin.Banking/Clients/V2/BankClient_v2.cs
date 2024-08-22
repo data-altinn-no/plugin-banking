@@ -352,7 +352,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                     if (requesterID != null)
                         request_.Headers.TryAddWithoutValidation("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
@@ -573,7 +573,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                     if (requesterID != null)
                         request_.Headers.TryAddWithoutValidation("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
@@ -1338,15 +1338,15 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         [Newtonsoft.Json.JsonProperty("servicer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public FinancialInstitution Servicer { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("accountIdentifier", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("accountIdentifier")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string AccountIdentifier { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("accountReference", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("accountReference")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string AccountReference { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("type", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public AccountType Type { get; set; }
 

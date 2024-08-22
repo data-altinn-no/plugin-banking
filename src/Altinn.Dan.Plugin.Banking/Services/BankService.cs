@@ -42,9 +42,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
         public async Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId)
         {
             Configure(bankList);
-            var correlationId1 = Guid.NewGuid();
-            var correlationId2 = Guid.NewGuid();
-            var correlationId3 = Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
 
             BankResponse bankResponse = new BankResponse { BankAccounts = new List<BankInfo>() };
             var bankTasks = new List<Task<BankInfo>>();
@@ -62,14 +60,16 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         bankList.ForEach(bank =>
                         _logger.LogInformation($"Preparing request to bank {bank.Name} with url {bank.Url} and version {bank.Version} and accountinforequestid {accountInfoRequestId}")
                             );
-                        bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId1, correlationId2, correlationId3);
+                        bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId);
                     }
                     catch (Exception e)
                     {
                         bankInfo = new BankInfo { Accounts = new List<AccountDtoV2>(), HasErrors = true};
                         _logger.LogError(
-                            "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, correlationId1: {correlationId1}, correlationId2: {correlationId2}, correlationId3: {correlationId3} )",
-                             name, orgnr, ssn[..6], e.Message, accountInfoRequestId, correlationId1, correlationId2, correlationId3);
+                            "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, source: {source})",
+                             name, orgnr, ssn[..6], e.Message, accountInfoRequestId, e.Source);
+
+                        
                     }
 
                     bankInfo.BankName = name;
@@ -96,7 +96,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             return bankResponse;
         }
 
-        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId1, Guid correlationId2, Guid correlationId3)
+        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId)
         {
             if (!_bankConfigs.ContainsKey(orgnr))
                 return new BankInfo { Accounts = new List<AccountDtoV2>(), IsImplemented = false };
@@ -113,9 +113,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 };
             var accountListTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountListRequestTimeoutSecs));
 
-            var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId1, "OED", ssn, true, null, null, null, fromDate, toDate);
+            var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
-            _logger.LogInformation("Found {0} accounts for {1} in bank {2} with accountinforequestid{3} and correlationid {4}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr, accountInfoRequestId, correlationId1);
+            _logger.LogInformation("Found {0} accounts for {1} in bank {2} with accountinforequestid{3} and correlationid {4}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr, accountInfoRequestId, correlationId);
             return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, fromDate, toDate); //application/jose
         }
         private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate)

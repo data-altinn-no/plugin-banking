@@ -22,8 +22,6 @@ public partial class Bank_v2
     // ReSharper disable once UnusedParameterInPartialMethod
     partial void ProcessResponse(HttpClient client, HttpResponseMessage response)
     {
-        var Aa = 1;
-
         if (!response.IsSuccessStatusCode)
             return;
 

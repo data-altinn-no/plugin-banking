@@ -1109,7 +1109,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string BankName { get; set; }
     
-        [Newtonsoft.Json.JsonProperty("activeAccount", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("activeAccount")]
         public bool ActiveAccount { get; set; }
     
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties = new System.Collections.Generic.Dictionary<string, object>();

@@ -188,9 +188,10 @@ namespace Altinn.Dan.Plugin.Banking
                 KARResponse karResponse;
                 try
                 {
-                    DateTimeOffset todayDto = new DateTimeOffset(DateTime.Now);
+                    DateTimeOffset fromDateDto = new DateTimeOffset(fromDate);
+                    DateTimeOffset toDateDto = new DateTimeOffset(toDate);
                     //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
-                    karResponse = await _karService.GetBanksForCustomer(ssn, todayDto, todayDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
+                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDateDto, toDateDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
                 }
                 catch (ApiException e)
                 {

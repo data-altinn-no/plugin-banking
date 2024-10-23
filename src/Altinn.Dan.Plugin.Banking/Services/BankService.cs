@@ -136,14 +136,14 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
 
                     _logger.LogInformation("Getting transactions: bank {0} account {1} dob {2} accountinforequestid {3} correlationid {4}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner.Identifier.Value.Substring(0,6), accountInfoRequestId, correlationIdTransactions);
+                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0,6), accountInfoRequestId, correlationIdTransactions);
 
                     var transactionsTask = bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
                         correlationIdTransactions, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
 
 
                     _logger.LogInformation("Getting account details: bank {0} account {1} dob {2} accountinforequestid {4} correlationid {5}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner.Identifier.Value.Substring(0, 6), accountInfoRequestId, correlationIdDetails);
+                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), accountInfoRequestId, correlationIdDetails);
 
 
                     var detailsTimeout =
@@ -152,7 +152,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         correlationIdDetails, "OED", null, null, null, fromDate , toDate, detailsTimeout.Token);
 
                     _logger.LogInformation("Retrieved account details: bank {0} account {1} dob {2} details {3} accountinforequestid {4} correlationid {5}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner.Identifier.Value.Substring(0, 6), details.ResponseDetails.Status, accountInfoRequestId, correlationIdDetails);
+                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), details.ResponseDetails.Status, accountInfoRequestId, correlationIdDetails);
 
                     if (details.Account == null)
                     {

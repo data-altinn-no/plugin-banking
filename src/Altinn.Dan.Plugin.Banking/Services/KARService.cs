@@ -10,6 +10,7 @@ using Altinn.Dan.Plugin.Banking.Clients;
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Altinn.Dan.Plugin.Banking.Services;
@@ -21,18 +22,21 @@ public class KARService : IKARService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMaskinportenService _maskinportenService;
     private readonly ApplicationSettings _settings;
+    private readonly ILogger _Logger;
 
-    public KARService(IHttpClientFactory httpClientFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings)
+    public KARService(IHttpClientFactory httpClientFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings, ILoggerFactory loggerFactory)
     {
         _httpClientFactory = httpClientFactory;
         _maskinportenService = maskinportenService;
         _settings = applicationSettings.Value;
+        _Logger = loggerFactory.CreateLogger<KARService>();
     }
 
     public async Task<KARResponse> GetBanksForCustomer(string ssn, DateTimeOffset fromDate, DateTimeOffset toDate, Guid accountInfoRequestId, Guid correlationId, bool skipKAR)
     {
         if (skipKAR)
         {
+            _Logger.LogInformation("Skipping KAR for accountinforequestid {accountinforequestid} and correlationid {correlationId}", accountInfoRequestId.ToString(), correlationId.ToString());
             return await GetAllImplementedBanks();
         }
 
@@ -46,8 +50,12 @@ public class KARService : IKARService
 
         var karTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(KarRequestTimeoutSecs));
 
-        return await kar.Get(ssn, token.AccessToken, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"),
+        var result = await kar.Get(ssn, token.AccessToken, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"),
             accountInfoRequestId, correlationId, karTimeout.Token);
+
+        _Logger.LogInformation("Retrieved from Kar {accountsCount} from accountinforequestid {accountinforequestid} and correlationid {correlationid}", result.Banks.Count, accountInfoRequestId.ToString(), correlationId.ToString());
+
+        return result;
     }
 
     private static readonly KARResponse ImplementedBanksCache = new() { Banks = new List<CustomerRelation>() };

@@ -617,6 +617,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
+                            var test = await response_.Content.ReadAsStringAsync();
                             var objectResponse_ = await ReadObjectResponseAsync<Transactions>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
@@ -2283,58 +2284,58 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Transaction
     {
-        [Newtonsoft.Json.JsonProperty("transactionIdentifier", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("transactionIdentifier")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string TransactionIdentifier { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("references", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("references", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<TransactionReference> References { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public CreditOrDebit CreditDebitIndicator { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("reversalIndicator", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("reversalIndicator", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool ReversalIndicator { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("status", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public TransactionStatus Status { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("transactionCode", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("transactionCode", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public BankTransactionCode TransactionCode { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("bookingDate", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("bookingDate", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.DateTimeOffset BookingDate { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("valueDate", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("valueDate", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.DateTimeOffset ValueDate { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("counterParties", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("counterParties", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<CounterParty> CounterParties { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("additionalInfo", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("additionalInfo", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.StringLength(500, MinimumLength = 1)]
         public string AdditionalInfo { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("currencyExchange", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("currencyExchange", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public CurrencyExchange CurrencyExchange { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("merchant", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("merchant", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.StringLength(140, MinimumLength = 1)]
         public string Merchant { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("paymentCard", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("paymentCard", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PaymentCard PaymentCard { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("registered", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("registered", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.DateTimeOffset Registered { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("amount", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
         public double Amount { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("currency", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("currency", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"[A-Z]{3,3}")]
         public string Currency { get; set; }
 
@@ -2429,14 +2430,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Transactions
     {
-        [Newtonsoft.Json.JsonProperty("responseDetails", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonProperty("responseDetails")]
         [System.ComponentModel.DataAnnotations.Required]
         public ResponseDetails ResponseDetails { get; set; } = new ResponseDetails();
 
         [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<Transaction> Transactions1 { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("links", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("links", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<Link> Links { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;

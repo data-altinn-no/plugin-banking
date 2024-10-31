@@ -178,7 +178,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     await transactionsTask;
 
                     _logger.LogInformation("Retrieved transactions: bank {0} account {1} dob {2} transaction count {3} accountinforequestid {4} correlationid {5}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner.Identifier.Value.Substring(0, 6), transactionsTask.Result.Transactions1.Count, accountInfoRequestId, correlationIdTransactions);
+                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactionsTask.Result.Transactions1.Count, accountInfoRequestId, correlationIdTransactions);
                     
 
                     return MapToInternalV2(details.Account, transactionsTask.Result.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);

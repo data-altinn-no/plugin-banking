@@ -22,6 +22,7 @@ using Microsoft.Extensions.Options;
 namespace Altinn.Dan.Plugin.Banking.Clients.V2
 {
     using System = global::System;
+    using System.Threading.Tasks;
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Bank_v2
@@ -66,7 +67,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, string url);
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
-        partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
+        public partial Task ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
 
         /// <summary>
         /// List of accounts for a specified party and period. Account number can be provided in place of the party identifier for lookup requests directly on the account. Must provide a blank list if no hits.
@@ -179,7 +180,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                                 headers_[item_.Key] = item_.Value;
                         }
 
-                        ProcessResponse(client_, response_);
+                        await ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading.Tasks;
 using Altinn.Dan.Plugin.Banking.Config;
 using Jose;
 using Microsoft.Extensions.Options;
@@ -20,7 +21,7 @@ public partial class Bank_v2
     /// <param name="client">Http client</param>
     /// <param name="response">Response from bank</param>
     // ReSharper disable once UnusedParameterInPartialMethod
-    partial void ProcessResponse(HttpClient client, HttpResponseMessage response)
+    public async partial Task ProcessResponse(HttpClient client, HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)
             return;
@@ -32,7 +33,7 @@ public partial class Bank_v2
             isAppJose = headervalues.Any(x => x == "application/jose");
         }
 
-        var jwt = response.Content.ReadAsStringAsync().Result;
+        var jwt = await response.Content.ReadAsStringAsync();
 
         var decryptedContent =
             JWT.Decode(jwt,

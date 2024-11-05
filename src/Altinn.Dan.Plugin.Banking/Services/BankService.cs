@@ -58,7 +58,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     try
                     {
                         bankList.ForEach(bank =>
-                        _logger.LogInformation($"Preparing request to bank {bank.Name} with url {bank.Url} and version {bank.Version} and accountinforequestid {accountInfoRequestId}")
+                        _logger.LogInformation($"Preparing request to bank {bank.Name}, url {bank.Url}, version {bank.Version}, accountinforequestid {accountInfoRequestId}, correlationid {correlationId}, fromdate {fromDate}, todate {toDate}")
                             );
                         bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId);
                     }
@@ -181,7 +181,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactionsTask.Result.Transactions1.Count, accountInfoRequestId, correlationIdTransactions);
                     
 
-                    return MapToInternalV2(details.Account, transactionsTask.Result.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    return MapToInternalV2(account.Type, details.Account, transactionsTask.Result.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                 }));
             }
 
@@ -264,11 +264,13 @@ namespace Altinn.Dan.Plugin.Banking.Services
         } */
 
         private AccountDtoV2 MapToInternalV2(
+            Bank_v2.AccountType accountType,
            Bank_v2.AccountDetail detail,
             ICollection<Bank_v2.Transaction> transactions,
             decimal availableBalance,
             decimal bookedBalance)
         {
+            detail.Type = accountType;
             // P.t. almost passthrough mapping
             return new AccountDtoV2
             {

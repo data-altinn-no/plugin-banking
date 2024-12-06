@@ -1,4 +1,5 @@
 using Altinn.ApiClients.Maskinporten.Interfaces;
+using Altinn.Dan.Plugin.Banking.Clients.V2;
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
@@ -65,9 +66,14 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     catch (Exception e)
                     {
                         bankInfo = new BankInfo { Accounts = new List<AccountDtoV2>(), HasErrors = true};
+                        string correlationId = string.Empty;
+                        if (e is ApiException k)
+                        {
+                            correlationId = k.CorrelationId;
+                        }
                         _logger.LogError(
-                            "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, source: {source})",
-                             name, orgnr, ssn[..6], e.Message, accountInfoRequestId, e.Source);
+                            "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, CorrelationId: {CorrelationId}, source: {source})",
+                             name, orgnr, ssn[..6], e.Message, accountInfoRequestId, correlationId, e.Source);
 
                         
                     }

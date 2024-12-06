@@ -188,88 +188,81 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Accounts>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
                             return objectResponse_.Object;
                         }
-                        else
-                        if (status_ == 400)
+                        else if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 401)
+                        else if (status_ == 401)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 403)
+                        else if (status_ == 403)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 405)
+                        else if (status_ == 405)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 406)
+                        else if (status_ == 406)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 429)
+                        else if (status_ == 429)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
-                        else
-                        if (status_ == 500)
+                        else if (status_ == 500)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                     }
                     finally
@@ -399,7 +392,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<AccountDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
                             return objectResponse_.Object;
                         }
@@ -409,9 +402,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 401)
@@ -419,9 +412,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 403)
@@ -429,9 +422,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 404)
@@ -439,9 +432,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 405)
@@ -449,9 +442,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 406)
@@ -459,9 +452,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 429)
@@ -469,9 +462,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 500)
@@ -479,18 +472,18 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                     }
                     finally
@@ -622,7 +615,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Transactions>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
                             return objectResponse_.Object;
                         }
@@ -632,9 +625,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 401)
@@ -642,9 +635,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 403)
@@ -652,9 +645,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 404)
@@ -662,9 +655,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 405)
@@ -672,9 +665,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 406)
@@ -682,9 +675,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 429)
@@ -692,9 +685,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 500)
@@ -702,18 +695,18 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                     }
                     finally
@@ -844,7 +837,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Cards>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
                             return objectResponse_.Object;
                         }
@@ -854,9 +847,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 401)
@@ -864,9 +857,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 403)
@@ -874,9 +867,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 404)
@@ -884,9 +877,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 405)
@@ -894,9 +887,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 406)
@@ -904,9 +897,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 429)
@@ -914,9 +907,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 500)
@@ -924,18 +917,18 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                     }
                     finally
@@ -1066,7 +1059,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Roles>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
                             return objectResponse_.Object;
                         }
@@ -1076,9 +1069,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 401)
@@ -1086,9 +1079,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 403)
@@ -1096,9 +1089,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 404)
@@ -1106,9 +1099,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 405)
@@ -1116,9 +1109,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 406)
@@ -1126,9 +1119,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 429)
@@ -1136,9 +1129,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         if (status_ == 500)
@@ -1146,18 +1139,18 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                             var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                         else
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                             }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                         }
                     }
                     finally
@@ -1189,7 +1182,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
         public bool ReadResponseAsString { get; set; } = true;
 
-        protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken)
+        protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken, string correlationId = "")
         {
             if (response == null || response.Content == null)
             {
@@ -1207,7 +1200,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                 catch (Newtonsoft.Json.JsonException exception)
                 {
                     var message = "Could not deserialize the response body string as " + typeof(T).FullName + ".";
-                    throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception);
+                    throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception, correlationId);
                 }
             }
             else
@@ -1226,7 +1219,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                 catch (Newtonsoft.Json.JsonException exception)
                 {
                     var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
-                    throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
+                    throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception, correlationId);
                 }
             }
         }
@@ -2803,14 +2796,17 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
         public string Response { get; private set; }
 
+        public string CorrelationId { get; private set; }
+
         public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
 
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception innerException)
-            : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
+        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception innerException, string correlationId)
+            : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)) + " correlationid " + correlationId, innerException)
         {
             StatusCode = statusCode;
             Response = response;
             Headers = headers;
+            CorrelationId = correlationId;
         }
 
         public override string ToString()
@@ -2824,8 +2820,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     {
         public TResult Result { get; private set; }
 
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception innerException)
-            : base(message, statusCode, response, headers, innerException)
+        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception innerException, string correlationId)
+            : base(message, statusCode, response, headers, innerException, correlationId)
         {
             Result = result;
         }

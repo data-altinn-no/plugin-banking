@@ -14,7 +14,6 @@ using System.Net.Http.Headers;
 using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
-using AccountDto = Altinn.Dan.Plugin.Banking.Models.Account;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
 using Bank_v2 = Altinn.Dan.Plugin.Banking.Clients.V2;
 
@@ -40,7 +39,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             _settings = applicationSettings.Value;
         }
 
-        public async Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId)
+        public async Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
         {
             Configure(bankList);
             var correlationId = Guid.NewGuid();
@@ -61,7 +60,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         bankList.ForEach(bank =>
                         _logger.LogInformation($"Preparing request to bank {bank.Name}, url {bank.Url}, version {bank.Version}, accountinforequestid {accountInfoRequestId}, correlationid {correlationId}, fromdate {fromDate}, todate {toDate}")
                             );
-                        bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId);
+                        bankInfo = await InvokeBank(ssn, orgnr, fromDate, toDate, accountInfoRequestId, correlationId, includeTransactions);
                     }
                     catch (Exception e)
                     {
@@ -102,7 +101,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             return bankResponse;
         }
 
-        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId)
+        private async Task<BankInfo> InvokeBank(string ssn, string orgnr, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, Guid correlationId, bool includeTransactions = true)
         {
             if (!_bankConfigs.ContainsKey(orgnr))
                 return new BankInfo { Accounts = new List<AccountDtoV2>(), IsImplemented = false };
@@ -122,9 +121,9 @@ namespace Altinn.Dan.Plugin.Banking.Services
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
             _logger.LogInformation("Found {0} accounts for {1} in bank {2} with accountinforequestid{3} and correlationid {4}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr, accountInfoRequestId, correlationId);
-            return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, fromDate, toDate); //application/jose
+            return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, fromDate, toDate, includeTransactions); //application/jose
         }
-        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate)
+        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate, bool includeTransactions = true)
         {
             
 
@@ -134,19 +133,22 @@ namespace Altinn.Dan.Plugin.Banking.Services
             {
                 Guid correlationIdDetails = Guid.NewGuid();
                 Guid correlationIdTransactions = Guid.NewGuid();
+                Task<Transactions> transactionsTask = null;
 
                 accountDetailsTasks.Add(Task.Run(async () =>
                 {
-                    // Start fetching transactions concurrently
-                    var transactionsTimeout =
-                        new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
+                    if (includeTransactions)
+                    {
+                        // Start fetching transactions concurrently
+                        var transactionsTimeout =
+                            new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
 
-                    _logger.LogInformation("Getting transactions: bank {0} account {1} dob {2} accountinforequestid {3} correlationid {4}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0,6), accountInfoRequestId, correlationIdTransactions);
+                        _logger.LogInformation("Getting transactions: bank {0} account {1} dob {2} accountinforequestid {3} correlationid {4}",
+                            account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), accountInfoRequestId, correlationIdTransactions);
 
-                    var transactionsTask = bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
-                        correlationIdTransactions, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
-
+                        transactionsTask = bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
+                            correlationIdTransactions, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
+                    }
 
                     _logger.LogInformation("Getting account details: bank {0} account {1} dob {2} accountinforequestid {4} correlationid {5}",
                         account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), accountInfoRequestId, correlationIdDetails);
@@ -181,13 +183,15 @@ namespace Altinn.Dan.Plugin.Banking.Services
                             b.Type == Altinn.Dan.Plugin.Banking.Clients.V2.BalanceType.BookedBalance && b.CreditDebitIndicator == Altinn.Dan.Plugin.Banking.Clients.V2.CreditOrDebit.Debit)
                         ?.Amount ?? 0;
 
-                    await transactionsTask;
-
-                    _logger.LogInformation("Retrieved transactions: bank {0} account {1} dob {2} transaction count {3} accountinforequestid {4} correlationid {5}",
-                        account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactionsTask.Result.Transactions1?.Count, accountInfoRequestId, correlationIdTransactions);
+                    if (includeTransactions)
+                    {
+                        await transactionsTask;
+                        _logger.LogInformation("Retrieved transactions: bank {0} account {1} dob {2} transaction count {3} accountinforequestid {4} correlationid {5}",
+    account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactionsTask.Result.Transactions1?.Count, accountInfoRequestId, correlationIdTransactions);
+                    }
                     
 
-                    return MapToInternalV2(account.Type, details.Account, transactionsTask.Result.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    return MapToInternalV2(account.Type, details.Account, transactionsTask?.Result?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                 }));
             }
 
@@ -308,6 +312,40 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 }
             }
         }
+
+        public async Task<Transactions> GetTransactionsForAccount(string ssn, List<EndpointExternal> endpoints, DateTime fromDate, DateTime toDate, Guid accountInfoRequestId, string accountReference)
+        {
+            Configure(endpoints);
+
+            var correlationId = Guid.NewGuid();
+            var transactionsTimeout =
+                         new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
+            var endpoint = endpoints.First();
+
+            _logger.LogInformation("Getting transactions: bank {0} accountrefence {1} dob {2} accountinforequestid {3} correlationid {4}",
+                endpoint.Name, accountReference, ssn.Substring(0, 6), accountInfoRequestId, correlationId);
+
+            if (!_bankConfigs.ContainsKey(endpoint.OrgNo))
+                return new Transactions();
+
+            BankConfig bankConfig = _bankConfigs[endpoint.OrgNo];
+            var token = await _maskinportenService.GetToken(_settings.Jwk, bankConfig.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bankConfig.BankAudience);
+
+            bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+
+            var bankClient = new Bank_v2.Bank_v2(bankConfig.Client, _settings)
+            {
+                BaseUrl = bankConfig.Client.BaseAddress?.ToString(),
+                DecryptionCertificate = _settings.OedDecryptCert
+            };
+
+            var transactions = await bankClient.ListTransactionsAsync(accountReference, accountInfoRequestId, correlationId, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
+
+            _logger.LogInformation("Retrieved transactions: bank {0} accountrefence {1} dob {2} accountinforequestid {3} correlationid {4}",
+    endpoint.Name, accountReference, ssn.Substring(0, 6), accountInfoRequestId, correlationId);
+
+            return transactions;
+        }            
     }
 
     internal class BankConfig

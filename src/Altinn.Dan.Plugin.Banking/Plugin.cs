@@ -73,6 +73,214 @@ namespace Altinn.Dan.Plugin.Banking
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
 
+        [Function("Kundeforhold")]
+        public async Task<HttpResponseData> GetKundeforhold(
+    [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+    FunctionContext context)
+        {
+
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();           
+
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKundeforhold(evidenceHarvesterRequest));
+        }
+
+        [Function("Kontotransaksjoner")]
+        public async Task<HttpResponseData> GetKontotransaksjoner(
+[HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+FunctionContext context)
+        {
+
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontotransaksjoner(evidenceHarvesterRequest));
+        }
+
+        private async Task<List<EvidenceValue>> GetKontotransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
+        {
+            var accountInfoRequestId = Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
+
+            var endpoints = await GetEndpoints();
+
+            var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
+
+            try
+            {
+                // TODO! Add DateTimeOffset overload for TryGetParameter
+                var fromDate = evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramFromDate)
+                    ? paramFromDate
+                    : DateTime.Now.AddMonths(-3);
+
+                var toDate = evidenceHarvesterRequest.TryGetParameter("TilDato", out DateTime paramToDate)
+                    ? paramToDate
+                    : DateTime.Now;
+
+                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
+
+                //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
+                accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
+
+                var accountRef = evidenceHarvesterRequest.TryGetParameter("Kontoreferanse", out string accountRefParam) ? accountRefParam : string.Empty;
+
+                var orgno = evidenceHarvesterRequest.TryGetParameter("Organisasjonsnummer", out string orgnoParam) ? orgnoParam : string.Empty;
+               
+
+                var filteredEndpoints = endpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").ToList();
+
+               
+                var ecb = new EvidenceBuilder(new Metadata(), "Kontotransaksjoner");
+
+                var transactions = await _bankService.GetTransactionsForAccount(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, accountRef);
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(transactions), "", false);
+
+                return ecb.GetEvidenceValues();
+            }
+            catch (Exception e)
+            {
+                if (e is DanException) throw;
+
+                _logger.LogError(
+                    "BanktransaksjonerKonto failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
+                    evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
+
+            }
+        }
+
+        private async Task<List<EvidenceValue>> GetKundeforhold(EvidenceHarvesterRequest evidenceHarvesterRequest)
+        {
+            var accountInfoRequestId = Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
+
+            var endpoints = await GetEndpoints();
+
+            var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
+
+            try
+            {
+                // TODO! Add DateTimeOffset overload for TryGetParameter
+                var fromDate = evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramFromDate)
+                    ? paramFromDate
+                    : DateTime.Now.AddMonths(-3);
+
+                var toDate = evidenceHarvesterRequest.TryGetParameter("TilDato", out DateTime paramToDate)
+                    ? paramToDate
+                    : DateTime.Now;
+
+                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
+
+                //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
+                accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
+
+                KARResponse karResponse;
+                try
+                {
+                    DateTimeOffset fromDateDto = new DateTimeOffset(fromDate);
+                    DateTimeOffset toDateDto = new DateTimeOffset(toDate);
+                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
+                    karResponse = await _karService.GetBanksForCustomer(ssn, fromDateDto, toDateDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
+                }
+                catch (ApiException e)
+                {
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR failed (HTTP status code: {e.StatusCode}, accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
+                }
+                catch (TaskCanceledException)
+                {
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
+                }
+
+                var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item => _settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
+               
+                //We are only legally allowed to use endpoints with version V2 due to the onlyPrimaryOwner flag
+                filteredEndpoints.RemoveAll(p => p.Version.ToUpper() == "V1");
+                filteredEndpoints.ForEach(p => p.Url = null);
+
+                var ecb = new EvidenceBuilder(new Metadata(), "Kundeforhold");
+
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(filteredEndpoints), "", false);
+
+                return ecb.GetEvidenceValues();
+            }
+            catch (Exception e)
+            {
+                if (e is DanException) throw;
+
+                _logger.LogError(
+                    "Kundeforhold failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
+                    evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
+
+            }
+        }
+
+
+        [Function("Kontodetaljer")]
+        public async Task<HttpResponseData> GetBankRelasjon(
+    [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+    FunctionContext context)
+        {
+
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontodetaljer(evidenceHarvesterRequest));
+        }
+
+        private async Task<List<EvidenceValue>> GetKontodetaljer(EvidenceHarvesterRequest evidenceHarvesterRequest)
+        {
+            var accountInfoRequestId = Guid.NewGuid();
+            var correlationId = Guid.NewGuid();
+
+            var endpoints = await GetEndpoints();
+
+            var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
+
+            try
+            {
+                // TODO! Add DateTimeOffset overload for TryGetParameter
+                var fromDate = evidenceHarvesterRequest.TryGetParameter("FraDato", out DateTime paramFromDate)
+                    ? paramFromDate
+                    : DateTime.Now.AddMonths(-3);
+
+                var toDate = evidenceHarvesterRequest.TryGetParameter("TilDato", out DateTime paramToDate)
+                    ? paramToDate
+                    : DateTime.Now;
+
+                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
+
+                var orgno = evidenceHarvesterRequest.TryGetParameter("Organisasjonsnummer", out string paramOrgNo) ? paramOrgNo : null;
+
+                bool includeTransactions = evidenceHarvesterRequest.TryGetParameter("InkluderTransaksjoner", out bool paramIncludeTransactions) ? paramIncludeTransactions : true;
+
+                //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
+                accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
+              
+
+                var filteredEndpoints = endpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").ToList();
+
+                if (string.IsNullOrEmpty(orgno) || filteredEndpoints.Count() != 1)
+                {
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Invalid organisation number provided");                    
+                }
+
+                var ecb = new EvidenceBuilder(new Metadata(), "Kontodetaljer");
+
+                BankResponse bankResult = await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, includeTransactions);
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
+
+                return ecb.GetEvidenceValues();
+            }
+            catch (Exception e)
+            {
+                if (e is DanException) throw;
+
+                _logger.LogError(
+                    "Kontodetaljer failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
+                    evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve account details");
+
+            }
+        }
+
         [Function("Kontrollinformasjon")]
         public async Task<HttpResponseData> GetKontrollinformasjon(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,

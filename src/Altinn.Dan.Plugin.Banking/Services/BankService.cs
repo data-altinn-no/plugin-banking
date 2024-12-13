@@ -42,13 +42,14 @@ namespace Altinn.Dan.Plugin.Banking.Services
         public async Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
         {
             Configure(bankList);
-            var correlationId = Guid.NewGuid();
+           
 
             BankResponse bankResponse = new BankResponse { BankAccounts = new List<BankInfo>() };
             var bankTasks = new List<Task<BankInfo>>();
 
             foreach (var bank in bankList)
             {
+                var correlationId = Guid.NewGuid();
                 bankTasks.Add(Task.Run(async () =>
                 {
                     string orgnr = bank.OrgNo;

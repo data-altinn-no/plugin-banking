@@ -182,7 +182,7 @@ namespace Altinn.Dan.Plugin.Banking
                     {
                         new MaskinportenScopeRequirement()
                         {
-                            RequiredScopes = new List<string>(){"altinn:dataaltinnno/kontrollinformasjon"}
+                            RequiredScopes = new List<string>(){"altinn:dataaltinnno/oed"}
                         }
                     }
                 },
@@ -244,7 +244,7 @@ namespace Altinn.Dan.Plugin.Banking
                     {
                         new MaskinportenScopeRequirement()
                         {
-                            RequiredScopes = new List<string>(){"altinn:dataaltinnno/kontrollinformasjon"}
+                            RequiredScopes = new List<string>(){"altinn:dataaltinnno/oed"}
                         }
                     }
                 },

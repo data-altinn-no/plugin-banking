@@ -18,8 +18,8 @@ var host = new HostBuilder()
         services.AddSingleton<ITokenCacheProvider, MemoryTokenCacheProvider>();
         services.AddSingleton<IMaskinportenService, MaskinportenService>();
         services.AddSingleton<IMemoryCacheProvider, MemoryCacheProvider>();
-        services.AddSingleton<IBankService, BankService>();
-        services.AddSingleton<IKARService, KARService>();
+        services.AddTransient<IBankService, BankService>();
+        services.AddTransient<IKARService, KARService>();
 
     })
     .Build();

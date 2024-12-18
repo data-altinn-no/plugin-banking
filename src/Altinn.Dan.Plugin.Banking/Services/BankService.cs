@@ -5,13 +5,11 @@ using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
@@ -24,13 +22,11 @@ namespace Altinn.Dan.Plugin.Banking.Services
         private readonly IMaskinportenService _maskinportenService;
         private readonly ILogger<BankService> _logger;
         private readonly ApplicationSettings _settings;
+        private readonly Dictionary<string, BankConfig> _bankConfigs = [];
 
         private const int TransactionRequestTimeoutSecs = 30;
         private const int AccountDetailsRequestTimeoutSecs = 30;
         private const int AccountListRequestTimeoutSecs = 30;
-
-        private static Dictionary<string, BankConfig> _bankConfigs;
-        private static readonly object LockObject = new();
 
         public BankService(ILoggerFactory loggerFactory, IMaskinportenService maskinportenService, IOptions<ApplicationSettings> applicationSettings)
         {
@@ -42,7 +38,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
         public async Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
         {
             Configure(bankList);
-           
+
 
             BankResponse bankResponse = new BankResponse { BankAccounts = new List<BankInfo>() };
             var bankTasks = new List<Task<BankInfo>>();
@@ -65,7 +61,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     }
                     catch (Exception e)
                     {
-                        bankInfo = new BankInfo { Accounts = new List<AccountDtoV2>(), HasErrors = true};
+                        bankInfo = new BankInfo { Accounts = new List<AccountDtoV2>(), HasErrors = true };
                         string correlationId = string.Empty;
                         if (e is ApiException k)
                         {
@@ -75,7 +71,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                             "Banktransaksjoner failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, CorrelationId: {CorrelationId}, source: {source})",
                              name, orgnr, ssn[..6], e.Message, accountInfoRequestId, correlationId, e.Source);
 
-                        
+
                     }
 
                     bankInfo.BankName = name;
@@ -113,21 +109,19 @@ namespace Altinn.Dan.Plugin.Banking.Services
             bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
             var bankClient = new Bank_v2.Bank_v2(bankConfig.Client, _settings)
-                {
-                    BaseUrl = bankConfig.Client.BaseAddress?.ToString(),
-                    DecryptionCertificate = _settings.OedDecryptCert
-                };
+            {
+                BaseUrl = bankConfig.Client.BaseAddress?.ToString(),
+                DecryptionCertificate = _settings.OedDecryptCert
+            };
             var accountListTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountListRequestTimeoutSecs));
 
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
-            _logger.LogInformation("Found {0} accounts for {1} in bank {2} with accountinforequestid{3} and correlationid {4}", accounts.Accounts1.Count, ssn.Substring(0,6), orgnr, accountInfoRequestId, correlationId);
+            _logger.LogInformation("Found {0} accounts for {1} in bank {2} with accountinforequestid{3} and correlationid {4}", accounts.Accounts1.Count, ssn.Substring(0, 6), orgnr, accountInfoRequestId, correlationId);
             return await GetAccountDetailsV2(bankClient, accounts, accountInfoRequestId, fromDate, toDate, includeTransactions); //application/jose
         }
-        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient,Bank_v2.Accounts accounts, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate, bool includeTransactions = true)
+        private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient, Bank_v2.Accounts accounts, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate, bool includeTransactions = true)
         {
-            
-
             BankInfo bankInfo = new BankInfo() { Accounts = new List<AccountDtoV2>() };
             var accountDetailsTasks = new List<Task<AccountDtoV2>>();
             foreach (Bank_v2.Account account in accounts.Accounts1)
@@ -158,7 +152,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     var detailsTimeout =
                         new CancellationTokenSource(TimeSpan.FromSeconds(AccountDetailsRequestTimeoutSecs));
                     var details = await bankClient.ShowAccountByIdAsync(account.AccountReference, accountInfoRequestId,
-                        correlationIdDetails, "OED", null, null, null, fromDate , toDate, detailsTimeout.Token);
+                        correlationIdDetails, "OED", null, null, null, fromDate, toDate, detailsTimeout.Token);
 
                     _logger.LogInformation("Retrieved account details: bank {0} account {1} dob {2} details {3} accountinforequestid {4} correlationid {5}",
                         account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), details.ResponseDetails.Status, accountInfoRequestId, correlationIdDetails);
@@ -190,7 +184,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         _logger.LogInformation("Retrieved transactions: bank {0} account {1} dob {2} transaction count {3} accountinforequestid {4} correlationid {5}",
     account.Servicer.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactionsTask.Result.Transactions1?.Count, accountInfoRequestId, correlationIdTransactions);
                     }
-                    
+
 
                     return MapToInternalV2(account.Type, details.Account, transactionsTask?.Result?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                 }));
@@ -295,22 +289,15 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
         private void Configure(List<EndpointExternal> banks)
         {
-            if (_bankConfigs != null) return;
-            lock (LockObject)
+            foreach (var bank in banks)
             {
-                if (_bankConfigs != null) return;
-                _bankConfigs = new Dictionary<string, BankConfig>();
-
-                foreach (var bank in banks)
+                _bankConfigs.Add(bank.OrgNo, new BankConfig()
                 {
-                    _bankConfigs.Add(bank.OrgNo, new BankConfig()
-                    {
-                        BankAudience = bank.Url,//.ToUpper().Replace("V1", "V2"),
-                        Client = new HttpClient { BaseAddress = new Uri(bank.Url) },
-                        MaskinportenEnv = _settings.MaskinportenEnvironment,
-                        ApiVersion = bank.Version
-                    });
-                }
+                    BankAudience = bank.Url,//.ToUpper().Replace("V1", "V2"),
+                    Client = new HttpClient { BaseAddress = new Uri(bank.Url) },
+                    MaskinportenEnv = _settings.MaskinportenEnvironment,
+                    ApiVersion = bank.Version
+                });
             }
         }
 
@@ -346,7 +333,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
     endpoint.Name, accountReference, ssn.Substring(0, 6), accountInfoRequestId, correlationId);
 
             return transactions;
-        }            
+        }
     }
 
     internal class BankConfig

@@ -10,6 +10,6 @@ namespace Altinn.Dan.Plugin.Banking.Services.Interfaces;
 
 public interface IBankService
 {
-    Task<BankResponse> GetTransactions(string ssn, List<EndpointExternal> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true);
-    Task<Transactions> GetTransactionsForAccount(string ssn, List<EndpointExternal> filteredEndpoints, DateTime fromDate, DateTime toDate, Guid accountInfoRequestId, string accountReference);
+    Task<BankResponse> GetTransactions(string ssn, Dictionary<string, BankConfig> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true);
+    Task<Transactions> GetTransactionsForAccount(string ssn, Dictionary<string,BankConfig> bankList, DateTime fromDate, DateTime toDate, Guid accountInfoRequestId, string accountReference);
 }

@@ -1,6 +1,7 @@
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Exceptions;
 using Altinn.Dan.Plugin.Banking.Models;
+using Altinn.Dan.Plugin.Banking.Services;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Azure.Core.Serialization;
 using Dan.Common;
@@ -49,27 +50,8 @@ namespace Altinn.Dan.Plugin.Banking
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
-        {
-            
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-
-            // For local debug, returns unenveloped JSON (but doesn't handle exceptions)
-            /*
-            var ret = await GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest);
-            var response =  HttpResponseData.CreateResponse(req);
-            response.Headers.Add("Content-Type", "application/json");
-            var list = new List<string>();
-
-            ret.ForEach(item =>
-            {
-                list.Add(item.Value.ToString());
-            });
-            
-            var responseItems = JsonConvert.SerializeObject(ret);
-
-            await response.WriteStringAsync(responseItems);
-            return response; */
-
+        {            
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();           
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
 
@@ -130,7 +112,9 @@ FunctionContext context)
                
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontotransaksjoner");
 
-                var transactions = await _bankService.GetTransactionsForAccount(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, accountRef);
+                var bankConfigs = CreateBankConfigurations(filteredEndpoints);
+
+                var transactions = await _bankService.GetTransactionsForAccount(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId, accountRef);
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(transactions), "", false);
 
                 return ecb.GetEvidenceValues();
@@ -264,7 +248,9 @@ FunctionContext context)
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontodetaljer");
 
-                BankResponse bankResult = await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId, includeTransactions);
+                var bankConfigs = CreateBankConfigurations(filteredEndpoints);
+
+                BankResponse bankResult = await _bankService.GetTransactions(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId, includeTransactions);
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
 
                 return ecb.GetEvidenceValues();
@@ -309,6 +295,24 @@ FunctionContext context)
             }
 
             return endpoints;
+        }
+
+        private Dictionary<string, BankConfig> CreateBankConfigurations(List<EndpointExternal> banks)
+        {
+            Dictionary<string, BankConfig> bankConfigs = new();
+            foreach (var bank in banks)
+            {
+                bankConfigs.Add(bank.OrgNo, new BankConfig()
+                {
+                    BankAudience = bank.Url,
+                    Client = new HttpClient { BaseAddress = new Uri(bank.Url) },
+                    MaskinportenEnv = _settings.MaskinportenEnvironment,
+                    ApiVersion = bank.Version,
+                    Name = bank.Name                   
+                });
+            }
+
+            return bankConfigs;
         }
 
         private async Task<List<EndpointExternal>> ReadEndpointsAndCache()
@@ -417,7 +421,14 @@ FunctionContext context)
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
 
-                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, filteredEndpoints, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new()};
+                var bankConfigs = CreateBankConfigurations(filteredEndpoints);                 
+                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new()};
+
+                //Add banks with implemented = false if they are in the response from KAR but not supported by digitalt dødsbo
+                foreach (var bank in karResponse.Banks.Where(p => !filteredEndpoints.Select(e => e.OrgNo).Contains(p.OrganizationID)))
+                {
+                    bankResult.BankAccounts.Add(new BankInfo() { BankName = bank.BankName, IsImplemented = false });
+                }
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
 
                 return ecb.GetEvidenceValues();

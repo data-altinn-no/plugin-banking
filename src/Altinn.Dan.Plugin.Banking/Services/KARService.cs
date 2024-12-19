@@ -36,7 +36,7 @@ public class KARService : IKARService
     {
         if (skipKAR)
         {
-            _Logger.LogInformation("Skipping KAR for accountinforequestid {accountinforequestid} and correlationid {correlationId}", accountInfoRequestId.ToString(), correlationId.ToString());
+            _Logger.LogInformation("Skipping KAR for accountinforequestid {AccountInfoRequestId} and correlationid {CorrelationId}", accountInfoRequestId, correlationId);
             return await GetAllImplementedBanks();
         }
 
@@ -53,12 +53,12 @@ public class KARService : IKARService
         var result = await kar.Get(ssn, token.AccessToken, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"),
             accountInfoRequestId, correlationId, karTimeout.Token);
 
-        _Logger.LogInformation("Retrieved from Kar {accountsCount} from accountinforequestid {accountinforequestid} and correlationid {correlationid}", result.Banks.Count, accountInfoRequestId.ToString(), correlationId.ToString());
+        _Logger.LogInformation("Retrieved from Kar {NumberOfBanks} from accountinforequestid {AccountInfoRequestId} and correlationid {CorrelationId}", result.Banks.Count, accountInfoRequestId, correlationId);
 
         return result;
     }
 
-    private static readonly KARResponse ImplementedBanksCache = new() { Banks = new List<CustomerRelation>() };
+    private static readonly KARResponse ImplementedBanksCache = new() { Banks = [] };
     private async Task<KARResponse> GetAllImplementedBanks()
     {
         if (ImplementedBanksCache.Banks.Count > 0) return ImplementedBanksCache;

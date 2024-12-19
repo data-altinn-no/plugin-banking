@@ -26,20 +26,8 @@ public partial class Bank_v2
         if (!response.IsSuccessStatusCode)
             return;
 
-        bool isAppJose = false;
-
-        if (response.Headers.TryGetValues("content-type", out IEnumerable<string?> headervalues))
-        {
-            isAppJose = headervalues.Any(x => x == "application/jose");
-        }
-
         var jwt = await response.Content.ReadAsStringAsync();
-
-        var decryptedContent =
-            JWT.Decode(jwt,
-                DecryptionCertificate
-                    .GetRSAPrivateKey()); //, JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
-
+        var decryptedContent = JWT.Decode(jwt, DecryptionCertificate.GetRSAPrivateKey()); //, JweAlgorithm.RSA_OAEP_256, JweEncryption.A128CBC_HS256);
         response.Content = new StringContent(decryptedContent, Encoding.UTF8);
     }
 

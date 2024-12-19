@@ -384,7 +384,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                                 headers_[item_.Key] = item_.Value;
                         }
 
-                        ProcessResponse(client_, response_);
+                        await ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
@@ -606,7 +606,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                                 headers_[item_.Key] = item_.Value;
                         }
 
-                        ProcessResponse(client_, response_);
+                        await ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
@@ -829,7 +829,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                                 headers_[item_.Key] = item_.Value;
                         }
 
-                        ProcessResponse(client_, response_);
+                        await ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
@@ -1051,7 +1051,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                                 headers_[item_.Key] = item_.Value;
                         }
 
-                        ProcessResponse(client_, response_);
+                        await ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)

@@ -63,7 +63,7 @@ namespace Altinn.Dan.Plugin.Banking
             FunctionContext context)
         {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetKundeforhold(evidenceHarvesterRequest));
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKundeforhold(evidenceHarvesterRequest));
         }
 
         [Function("Kontotransaksjoner")]

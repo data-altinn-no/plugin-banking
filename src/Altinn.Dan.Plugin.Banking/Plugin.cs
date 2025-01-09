@@ -63,7 +63,7 @@ namespace Altinn.Dan.Plugin.Banking
 
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();           
 
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetKundeforhold(evidenceHarvesterRequest));
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKundeforhold(evidenceHarvesterRequest));
         }
 
         [Function("Kontotransaksjoner")]
@@ -131,7 +131,7 @@ FunctionContext context)
             }
         }
 
-        private async Task<List<EvidenceValue>> GetKundeforhold(EvidenceHarvesterRequest evidenceHarvesterRequest)
+        private async Task<List<EvidenceValue>> GetEvidenceValuesKundeforhold(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
@@ -173,15 +173,16 @@ FunctionContext context)
                     throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
-                var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item => _settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
-               
-                //We are only legally allowed to use endpoints with version V2 due to the onlyPrimaryOwner flag
-                filteredEndpoints.RemoveAll(p => p.Version.ToUpper() == "V1");
-                filteredEndpoints.ForEach(p => p.Url = null);
+                var response = new BankRelations();               
+
+                foreach(var relation in karResponse.Banks)
+                {
+                    response.Banks.Add(new BankRelation() { BankName = relation.BankName, OrganizationNumber = relation.OrganizationID, IsImplemented = _settings.ImplementedBanks.Contains(relation.OrganizationID) });
+                }                
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kundeforhold");
 
-                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(filteredEndpoints), "", false);
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(response), "", false);
 
                 return ecb.GetEvidenceValues();
             }

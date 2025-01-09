@@ -17,6 +17,20 @@ namespace Altinn.Dan.Plugin.Banking.Models
         public List<AccountV2> Accounts { get; set; }
 
         public bool HasErrors { get; set; } = false;
+
+    }
+
+    public class BankRelations
+    {
+        public List<BankRelation> Banks { get; set; } = new List<BankRelation>();
+    }
+
+    public class BankRelation
+    {
+        public string BankName { get; set; }
+        public bool IsImplemented { get; set; }       
+
+        public string OrganizationNumber { get; set; }
     }
 
     public class Account

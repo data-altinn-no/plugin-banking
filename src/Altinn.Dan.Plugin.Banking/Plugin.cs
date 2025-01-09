@@ -30,6 +30,7 @@ namespace Altinn.Dan.Plugin.Banking
     {
         private readonly IBankService _bankService;
         private readonly IKARService _karService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
         private readonly HttpClient _client;
         private readonly ApplicationSettings _settings;
@@ -40,6 +41,7 @@ namespace Altinn.Dan.Plugin.Banking
         {
             _bankService = bankService;
             _karService = karService;
+            _httpClientFactory = httpClientFactory;
             _client = httpClientFactory.CreateClient("SafeHttpClient");
             _settings = settings.Value;
             _logger = loggerFactory.CreateLogger<Plugin>();
@@ -51,39 +53,74 @@ namespace Altinn.Dan.Plugin.Banking
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
         {            
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();           
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
 
         [Function("Kundeforhold")]
         public async Task<HttpResponseData> GetKundeforhold(
-    [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
-    FunctionContext context)
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
         {
-
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();           
-
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKundeforhold(evidenceHarvesterRequest));
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKundeforhold(evidenceHarvesterRequest));
         }
 
         [Function("Kontotransaksjoner")]
         public async Task<HttpResponseData> GetKontotransaksjoner(
-[HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
-FunctionContext context)
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
         {
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontotransaksjoner(evidenceHarvesterRequest));
+        }
 
+        [Function("Kontodetaljer")]
+        public async Task<HttpResponseData> GetBankRelasjon(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
+        {
+            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontodetaljer(evidenceHarvesterRequest));
+        }
+
+        [Function("Kontrollinformasjon")]
+        public async Task<HttpResponseData> GetKontrollinformasjon(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            FunctionContext context)
+        {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
 
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontotransaksjoner(evidenceHarvesterRequest));
+            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKontrollinformasjon());
+        }
+
+        [Function("OppdaterKontrollinformasjon")]
+        public async Task<HttpResponseData> UpdateKontrollinformasjon(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
+            FunctionContext context)
+        {
+            var endpoints = await ReadEndpointsAndCache();
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count });
+            return response;
+        }
+
+        [Function(Constants.EvidenceSourceMetadataFunctionName)]
+        public async Task<HttpResponseData> Metadata(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, FunctionContext context)
+        {
+            _logger.LogInformation($"Running metadata for {Constants.EvidenceSourceMetadataFunctionName}");
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(new Metadata().GetEvidenceCodes(), new NewtonsoftJsonObjectSerializer(new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto }));
+            return response;
         }
 
         private async Task<List<EvidenceValue>> GetKontotransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
-
-            var endpoints = await GetEndpoints();
-
+            var bankEndpoints = await GetBankEndpoints();
             var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
             try
@@ -97,26 +134,18 @@ FunctionContext context)
                     ? paramToDate
                     : DateTime.Now;
 
-                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
-
                 //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
                 accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
-
                 var accountRef = evidenceHarvesterRequest.TryGetParameter("Kontoreferanse", out string accountRefParam) ? accountRefParam : string.Empty;
-
                 var orgno = evidenceHarvesterRequest.TryGetParameter("Organisasjonsnummer", out string orgnoParam) ? orgnoParam : string.Empty;
-               
 
-                var filteredEndpoints = endpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").ToList();
-
-               
+                var filteredEndpoint = bankEndpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").FirstOrDefault();
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontotransaksjoner");
+              
+                var bankConfig = CreateBankConfigurations(filteredEndpoint);
+                var transactions = await _bankService.GetTransactionsForAccount(ssn, bankConfig, fromDate, toDate, accountInfoRequestId, accountRef);
 
-                var bankConfigs = CreateBankConfigurations(filteredEndpoints);
-
-                var transactions = await _bankService.GetTransactionsForAccount(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId, accountRef);
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(transactions), "", false);
-
                 return ecb.GetEvidenceValues();
             }
             catch (Exception e)
@@ -135,9 +164,7 @@ FunctionContext context)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
-
-            var endpoints = await GetEndpoints();
-
+            var endpoints = await GetBankEndpoints();
             var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
             try
@@ -174,16 +201,13 @@ FunctionContext context)
                 }
 
                 var response = new BankRelations();               
-
                 foreach(var relation in karResponse.Banks)
                 {
                     response.Banks.Add(new BankRelation() { BankName = relation.BankName, OrganizationNumber = relation.OrganizationID, IsImplemented = _settings.ImplementedBanks.Contains(relation.OrganizationID) });
                 }                
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kundeforhold");
-
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(response), "", false);
-
                 return ecb.GetEvidenceValues();
             }
             catch (Exception e)
@@ -194,29 +218,14 @@ FunctionContext context)
                     "Kundeforhold failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
                     evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
-
             }
-        }
-
-
-        [Function("Kontodetaljer")]
-        public async Task<HttpResponseData> GetBankRelasjon(
-    [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
-    FunctionContext context)
-        {
-
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetKontodetaljer(evidenceHarvesterRequest));
         }
 
         private async Task<List<EvidenceValue>> GetKontodetaljer(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
-
-            var endpoints = await GetEndpoints();
-
+            var endpoints = await GetBankEndpoints();
             var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
             try
@@ -230,30 +239,23 @@ FunctionContext context)
                     ? paramToDate
                     : DateTime.Now;
 
-                bool skipKAR = evidenceHarvesterRequest.TryGetParameter("SkipKAR", out bool paramSkipKAR) ? paramSkipKAR : false;
-
                 var orgno = evidenceHarvesterRequest.TryGetParameter("Organisasjonsnummer", out string paramOrgNo) ? paramOrgNo : null;
-
-                bool includeTransactions = evidenceHarvesterRequest.TryGetParameter("InkluderTransaksjoner", out bool paramIncludeTransactions) ? paramIncludeTransactions : true;
+                var includeTransactions = evidenceHarvesterRequest.TryGetParameter("InkluderTransaksjoner", out bool paramIncludeTransactions) ? paramIncludeTransactions : true;
 
                 //accountinforequestid must be provided in parameter in order to maintain the correct use across requests from different users of digitalt dødsbo
                 accountInfoRequestId = evidenceHarvesterRequest.TryGetParameter("ReferanseId", out string accountInfoRequestIdFromParam) ? new Guid(accountInfoRequestIdFromParam) : accountInfoRequestId;
-              
-
                 var filteredEndpoints = endpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").ToList();
 
-                if (string.IsNullOrEmpty(orgno) || filteredEndpoints.Count() != 1)
+                if (string.IsNullOrEmpty(orgno) || filteredEndpoints.Count != 1)
                 {
-                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Invalid organisation number provided");                    
+                    throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Invalid organisation number provided");
                 }
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontodetaljer");
-
                 var bankConfigs = CreateBankConfigurations(filteredEndpoints);
+                var bankResult = await _bankService.GetAccounts(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId, includeTransactions);
 
-                BankResponse bankResult = await _bankService.GetTransactions(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId, includeTransactions);
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(bankResult), "", false);
-
                 return ecb.GetEvidenceValues();
             }
             catch (Exception e)
@@ -264,29 +266,18 @@ FunctionContext context)
                     "Kontodetaljer failed unexpectedly for {Subject}, error {Error} (accountInfoRequestId: {AccountInfoRequestId}, correlationID: {CorrelationId})",
                     evidenceHarvesterRequest.SubjectParty.GetAsString(), e.Message, accountInfoRequestId, correlationId);
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve account details");
-
             }
-        }
-
-        [Function("Kontrollinformasjon")]
-        public async Task<HttpResponseData> GetKontrollinformasjon(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
-            FunctionContext context)
-        {
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKontrollinformasjon());
         }
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesKontrollinformasjon()
         {
             var ecb = new EvidenceBuilder(new Metadata(), "Kontrollinformasjon");
-            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(await GetEndpoints()), "BITS", false);
+            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(await GetBankEndpoints()), "BITS", false);
 
             return ecb.GetEvidenceValues();
         }
 
-        private async Task<List<EndpointExternal>> GetEndpoints()
+        private async Task<List<EndpointExternal>> GetBankEndpoints()
         {
             (bool hasCachedValue, var endpoints) = await _memCache.TryGetEndpoints(ENDPOINTS_KEY);
 
@@ -300,26 +291,34 @@ FunctionContext context)
 
         private Dictionary<string, BankConfig> CreateBankConfigurations(List<EndpointExternal> banks)
         {
-            Dictionary<string, BankConfig> bankConfigs = new();
+
+            Dictionary<string, BankConfig> bankConfigs = [];
             foreach (var bank in banks)
             {
+                var httpClient = _httpClientFactory.CreateClient(bank.OrgNo);
+                httpClient.BaseAddress = new Uri(bank.Url);
+
                 bankConfigs.Add(bank.OrgNo, new BankConfig()
                 {
                     BankAudience = bank.Url,
-                    Client = new HttpClient { BaseAddress = new Uri(bank.Url) },
+                    Client = httpClient,
                     MaskinportenEnv = _settings.MaskinportenEnvironment,
                     ApiVersion = bank.Version,
-                    Name = bank.Name                   
+                    Name = bank.Name,
+                    OrgNo = bank.OrgNo
                 });
             }
 
             return bankConfigs;
         }
 
+        private BankConfig CreateBankConfigurations(EndpointExternal bank)
+            => CreateBankConfigurations([bank]).Single().Value;
+
         private async Task<List<EndpointExternal>> ReadEndpointsAndCache()
         {
             var file = await GetFileFromGithub();
-           // var file = Encoding.UTF8.GetString(bytes,0, bytes.Length);
+            // var file = Encoding.UTF8.GetString(bytes,0, bytes.Length);
 
             var engine = new DelimitedFileEngine<EndpointV2>(Encoding.UTF8);
             var endpoints = engine.ReadString(file).ToList();
@@ -327,11 +326,12 @@ FunctionContext context)
             List<EndpointExternal> result = new List<EndpointExternal>();
             _logger.LogInformation($"Endpoints parsed from csv - {engine.TotalRecords} to be cached");
 
-            if (engine.TotalRecords > 0 && endpoints.Count>0)
-            {               
+            if (engine.TotalRecords > 0 && endpoints.Count > 0)
+            {
                 result = await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(60));
                 _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
-            } else
+            }
+            else
             {
                 _logger.LogCritical($"Plugin func-es-banking no endpoints found in csv!!!");
             }
@@ -360,25 +360,12 @@ FunctionContext context)
             }
         }
 
-
-        [Function("OppdaterKontrollinformasjon")]
-        public async Task<HttpResponseData> UpdateKontrollinformasjon(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
-            FunctionContext context)
-        {
-            var endpoints = await ReadEndpointsAndCache();
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count });
-            return response;
-        }
-
         private async Task<List<EvidenceValue>> GetEvidenceValuesBankTransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
 
-            var endpoints = await GetEndpoints();
+            var endpoints = await GetBankEndpoints();
 
             var ssn = evidenceHarvesterRequest.SubjectParty?.NorwegianSocialSecurityNumber;
 
@@ -415,15 +402,14 @@ FunctionContext context)
                     throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
-                var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item =>_settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
+                var filteredEndpoints = endpoints.Where(p => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(p.OrgNo)).Where(item => _settings.ImplementedBanks.Contains(item.OrgNo)).ToList();
 
                 //We are only legally allowed to use endpoints with version V2 due to the onlyPrimaryOwner flag
                 filteredEndpoints.RemoveAll(p => p.Version.ToUpper() == "V1");
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
-
-                var bankConfigs = CreateBankConfigurations(filteredEndpoints);                 
-                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetTransactions(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new()};
+                var bankConfigs = CreateBankConfigurations(filteredEndpoints);
+                BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetAccounts(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new() };
 
                 //Add banks with implemented = false if they are in the response from KAR but not supported by digitalt dødsbo
                 foreach (var bank in karResponse.Banks.Where(p => !filteredEndpoints.Select(e => e.OrgNo).Contains(p.OrganizationID)))
@@ -444,16 +430,6 @@ FunctionContext context)
                 throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_BANK_REQUEST_ERROR, "Could not retrieve bank transactions");
 
             }
-        }
-
-        [Function(Constants.EvidenceSourceMetadataFunctionName)]
-        public async Task<HttpResponseData> Metadata(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, FunctionContext context)
-        {
-            _logger.LogInformation($"Running metadata for {Constants.EvidenceSourceMetadataFunctionName}");
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new Metadata().GetEvidenceCodes(), new NewtonsoftJsonObjectSerializer(new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto }));
-            return response;
         }
     }
 }

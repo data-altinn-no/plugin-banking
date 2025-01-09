@@ -52,7 +52,7 @@ namespace Altinn.Dan.Plugin.Banking
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
-        {
+        {            
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
@@ -141,7 +141,7 @@ namespace Altinn.Dan.Plugin.Banking
 
                 var filteredEndpoint = bankEndpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").FirstOrDefault();
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontotransaksjoner");
-
+              
                 var bankConfig = CreateBankConfigurations(filteredEndpoint);
                 var transactions = await _bankService.GetTransactionsForAccount(ssn, bankConfig, fromDate, toDate, accountInfoRequestId, accountRef);
 
@@ -160,7 +160,7 @@ namespace Altinn.Dan.Plugin.Banking
             }
         }
 
-        private async Task<List<EvidenceValue>> GetKundeforhold(EvidenceHarvesterRequest evidenceHarvesterRequest)
+        private async Task<List<EvidenceValue>> GetEvidenceValuesKundeforhold(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {
             var accountInfoRequestId = Guid.NewGuid();
             var correlationId = Guid.NewGuid();
@@ -200,24 +200,14 @@ namespace Altinn.Dan.Plugin.Banking
                     throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
-                var filteredEndpoints = endpoints
-                    .Where(x => karResponse.Banks.Select(e => e.OrganizationID).ToHashSet().Contains(x.OrgNo))
-                    .Where(x => _settings.ImplementedBanks.Contains(x.OrgNo))
-                    .Where(x => x.Version.ToUpper() != "V1")
-                    .Select(x => new EndpointExternal
-                    {
-                        OrgNo = x.OrgNo,
-                        Env = x.Env,
-                        Name = x.Name,
-                        Url = null,
-                        Version = x.Version
-                    })
-                    .ToList();
+                var response = new BankRelations();               
+                foreach(var relation in karResponse.Banks)
+                {
+                    response.Banks.Add(new BankRelation() { BankName = relation.BankName, OrganizationNumber = relation.OrganizationID, IsImplemented = _settings.ImplementedBanks.Contains(relation.OrganizationID) });
+                }                
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kundeforhold");
-
-                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(filteredEndpoints), "", false);
-
+                ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(response), "", false);
                 return ecb.GetEvidenceValues();
             }
             catch (Exception e)
@@ -301,6 +291,7 @@ namespace Altinn.Dan.Plugin.Banking
 
         private Dictionary<string, BankConfig> CreateBankConfigurations(List<EndpointExternal> banks)
         {
+
             Dictionary<string, BankConfig> bankConfigs = [];
             foreach (var bank in banks)
             {
@@ -417,7 +408,6 @@ namespace Altinn.Dan.Plugin.Banking
                 filteredEndpoints.RemoveAll(p => p.Version.ToUpper() == "V1");
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Banktransaksjoner");
-
                 var bankConfigs = CreateBankConfigurations(filteredEndpoints);
                 BankResponse bankResult = karResponse.Banks.Count > 0 ? await _bankService.GetAccounts(ssn, bankConfigs, fromDate, toDate, accountInfoRequestId) : new() { BankAccounts = new() };
 

@@ -33,6 +33,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             _settings = applicationSettings.Value;
         }
 
+
         public async Task<BankResponse> GetAccounts(string ssn, Dictionary<string, BankConfig> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
         {
             BankResponse bankResponse = new BankResponse { BankAccounts = [] };
@@ -96,7 +97,6 @@ namespace Altinn.Dan.Plugin.Banking.Services
             };
             var accountListTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountListRequestTimeoutSecs));
             var accounts = await GetAllAccounts(bankClient, bank, accountInfoRequestId, ssn, fromDate, toDate);
-
             var x = await GetAccountDetailsV2(bankClient, accounts, bank, accountInfoRequestId, fromDate, toDate, includeTransactions);
             return x;
         }
@@ -293,6 +293,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
             _logger.LogInformation("Getting transactions: bank {BankName} accountrefence {AccountReference} dob {DateOfBirth} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
                 bankConfig.Name, accountReference, ssn[..6], accountInfoRequestId, correlationId);
+
             var token = await _maskinportenService.GetToken(_settings.Jwk, bankConfig.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bankConfig.BankAudience);
 
             bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);

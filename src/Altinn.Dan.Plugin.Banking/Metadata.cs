@@ -102,13 +102,7 @@ namespace Altinn.Dan.Plugin.Banking
                             EvidenceParamName = "TilDato",
                             ParamType = EvidenceParamType.DateTime,
                             Required = false
-                        },
-                        new EvidenceParameter()
-                        {
-                            EvidenceParamName = "SkipKAR",
-                            ParamType = EvidenceParamType.Boolean,
-                            Required = false
-                        },
+                        },                       
                         new EvidenceParameter()
                         {
                             EvidenceParamName = "ReferanseId",

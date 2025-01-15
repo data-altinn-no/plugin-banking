@@ -97,45 +97,40 @@ namespace Altinn.Dan.Plugin.Banking.Services
             };
             var accountListTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountListRequestTimeoutSecs));
             var accounts = await GetAllAccounts(bankClient, bank, accountInfoRequestId, ssn, fromDate, toDate);
-            var x = await GetAccountDetailsV2(bankClient, accounts, bank, accountInfoRequestId, fromDate, toDate, includeTransactions);
-            return x;
+            return await GetAccountDetailsV2(bankClient, accounts, bank, accountInfoRequestId, fromDate, toDate, includeTransactions);
         }
 
         private async Task<BankInfo> GetAccountDetailsV2(Bank_v2.Bank_v2 bankClient, Accounts accounts, BankConfig bank, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate, bool includeTransactions = true)
         {
             var bankInfo = new BankInfo() { Accounts = [] };
             var transactions = new Transactions();
-            foreach (Bank_v2.Account account in accounts.Accounts1)
+
+            IEnumerable<Task<AccountDetails>> accountsDetailsTasks = accounts.Accounts1.Select(x => GetAccountById(bankClient, x, bank, accountInfoRequestId, fromDate, toDate));
+            AccountDetails[] accountsDetails = await Task.WhenAll(accountsDetailsTasks);
+            foreach (var accountDetails in accountsDetails)
             {
-                var details = await GetAccountById(bankClient, account, bank, accountInfoRequestId, fromDate, toDate);
+                if (accountDetails.Account == null) continue;
 
-                if (details.Account == null)
-                {
-                    // Some test accounts come up with an empty response from the bank here (just '{ "responseStatus": "complete" }'.
-                    // We skip those by returning an empty AccountDto.
-                    continue;
-                }
-
-                var availableCredit = details.Account.Balances.FirstOrDefault(b =>
+                var availableCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
                         b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                     ?.Amount ?? 0;
-                var availableDebit = details.Account.Balances.FirstOrDefault(b =>
+                var availableDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
                         b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                     ?.Amount ?? 0;
 
-                var bookedCredit = details.Account.Balances.FirstOrDefault(b =>
+                var bookedCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
                         b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                     ?.Amount ?? 0;
-                var bookedDebit = details.Account.Balances.FirstOrDefault(b =>
+                var bookedDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
                         b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                     ?.Amount ?? 0;
 
                 if (includeTransactions)
                 {
-                    transactions = await ListTransactionsForAccount(bankClient, account, bank, accountInfoRequestId, fromDate, toDate);
+                    transactions = await ListTransactionsForAccount(bankClient, accountDetails, bank, accountInfoRequestId, fromDate, toDate);
                 }
 
-                var internalAccount = MapToInternalV2(account, details.Account, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                var internalAccount = MapToInternalV2(accountDetails, accountDetails.Account, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                 if (internalAccount.AccountDetail != null)
                 {
                     bankInfo.Accounts.Add(internalAccount);
@@ -179,6 +174,26 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
         private async Task<Transactions> ListTransactionsForAccount(Bank_v2.Bank_v2 bankClient, Bank_v2.Account account, BankConfig bank, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate)
         {
+            Guid correlationIdTransactions = Guid.NewGuid();
+
+            // Start fetching transactions concurrently
+            var transactionsTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(TransactionRequestTimeoutSecs));
+
+            _logger.LogInformation("Getting transactions: bank {BankName} accountreference {AccountReference} dob {DateOfBirth} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
+                bank.Name, account.AccountReference, account.PrimaryOwner?.Identifier?.Value?[..6], accountInfoRequestId, correlationIdTransactions);
+
+            var transactions = await bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
+                correlationIdTransactions, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
+
+            _logger.LogInformation("Retrieved transactions: bank {BankName} accountreference {AccountReference} dob {DateOfBirth} transaction count {NumberOfTransactions} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
+                bank.Name, account.AccountIdentifier, account.PrimaryOwner?.Identifier?.Value?.Substring(0, 6), transactions.Transactions1?.Count, accountInfoRequestId, correlationIdTransactions);
+
+            return transactions;
+        }
+
+        private async Task<Transactions> ListTransactionsForAccount(Bank_v2.Bank_v2 bankClient, AccountDetails accountDetails, BankConfig bank, Guid accountInfoRequestId, DateTimeOffset? fromDate, DateTimeOffset? toDate)
+        {
+            var account = accountDetails.Account;
             Guid correlationIdTransactions = Guid.NewGuid();
 
             // Start fetching transactions concurrently
@@ -271,6 +286,29 @@ namespace Altinn.Dan.Plugin.Banking.Services
             decimal availableBalance,
             decimal bookedBalance)
         {
+            detail.Type = account.Type;
+            detail.AccountIdentifier = account.AccountIdentifier;
+            detail.AccountReference = account.AccountReference;
+
+            // P.t. almost passthrough mapping
+            return new AccountDtoV2
+            {
+                AccountNumber = account.AccountIdentifier,
+                AccountDetail = detail,
+                Transactions = transactions,
+                AccountAvailableBalance = availableBalance,
+                AccountBookedBalance = bookedBalance
+            };
+        }
+
+        private AccountDtoV2 MapToInternalV2(
+            AccountDetails accountDetails,
+            AccountDetail detail,
+            ICollection<Transaction> transactions,
+            decimal availableBalance,
+            decimal bookedBalance)
+        {
+            var account = accountDetails.Account;
             detail.Type = account.Type;
             detail.AccountIdentifier = account.AccountIdentifier;
             detail.AccountReference = account.AccountReference;

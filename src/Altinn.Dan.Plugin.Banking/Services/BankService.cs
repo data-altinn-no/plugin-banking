@@ -1,7 +1,7 @@
 using Altinn.ApiClients.Maskinporten.Interfaces;
-using Altinn.Dan.Plugin.Banking.Clients;
 using Altinn.Dan.Plugin.Banking.Clients.V2;
 using Altinn.Dan.Plugin.Banking.Config;
+using Altinn.Dan.Plugin.Banking.Extensions;
 using Altinn.Dan.Plugin.Banking.Models;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
@@ -61,7 +60,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                             innerExceptionMsg = k.InnerException?.Message;
                         }
                         _logger.LogError(
-                            "Bank failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, CorrelationId: {CorrelationId}, source: {source}, innerExceptionMessage: {innerExceptionMessage})",
+                            "Bank failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, CorrelationId: {CorrelationId}, source: {source}, innerExceptionMessage: {innerExceptionMessage}",
                              bank.Value.Name, bank.Value.OrgNo, ssn[..6], e.Message, accountInfoRequestId, correlationId, e.Source, innerExceptionMsg);
                     }
 
@@ -109,36 +108,80 @@ namespace Altinn.Dan.Plugin.Banking.Services
             var bankInfo = new BankInfo() { Accounts = [] };
             var transactions = new Transactions();
 
-            IEnumerable<Task<AccountDetails>> accountsDetailsTasks = accounts.Accounts1.Select(x => GetAccountById(bankClient, x, bank, accountInfoRequestId, fromDate, toDate));
-            AccountDetails[] accountsDetails = await Task.WhenAll(accountsDetailsTasks);
-            foreach (var accountDetails in accountsDetails)
+            Task<AccountDetails>[] accountsDetailsTasks = accounts.Accounts1.Select(x => GetAccountById(bankClient, x, bank, accountInfoRequestId, fromDate, toDate)).ToArray();
+            var results = Task.WhenAll(accountsDetailsTasks);
+            try
             {
-                if (accountDetails.Account == null) continue;
-
-                var availableCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
-                        b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
-                    ?.Amount ?? 0;
-                var availableDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
-                        b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
-                    ?.Amount ?? 0;
-
-                var bookedCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
-                        b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
-                    ?.Amount ?? 0;
-                var bookedDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
-                        b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
-                    ?.Amount ?? 0;
-
-                if (includeTransactions)
+                AccountDetails[] accountsDetails = await results;
+                foreach (var accountDetails in accountsDetails)
                 {
-                    transactions = await ListTransactionsForAccount(bankClient, accountDetails, bank, accountInfoRequestId, fromDate, toDate);
+                    if (accountDetails.Account == null) continue;
+
+                    var availableCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                            b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
+                        ?.Amount ?? 0;
+                    var availableDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                            b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
+                        ?.Amount ?? 0;
+
+                    var bookedCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                            b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
+                        ?.Amount ?? 0;
+                    var bookedDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                            b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
+                        ?.Amount ?? 0;
+
+                    if (includeTransactions)
+                    {
+                        transactions = await ListTransactionsForAccount(bankClient, accountDetails, bank, accountInfoRequestId, fromDate, toDate);
+                    }
+
+                    var internalAccount = MapToInternalV2(accountDetails, accountDetails.Account, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    if (internalAccount.AccountDetail != null)
+                    {
+                        bankInfo.Accounts.Add(internalAccount);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (e is ApiException k && k.StatusCode >= 400)
+                {
+                    var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
+                    var successfulAccounts = await Task.WhenAll(successfulTasks);
+                    var faultedAccounts = accounts.Accounts1.Where(x => !successfulAccounts.Any(y => y.Account.AccountReference == x.AccountReference)).ToList();
+
+                    foreach (var faultedAccount in faultedAccounts)
+                    {
+                        faultedAccount.LogGetAccountByIdError(_logger, k, bank, accountInfoRequestId);
+                        bankInfo.Accounts.Add(new AccountDtoV2
+                        {
+                            AccountAvailableBalance = 0,
+                            AccountBookedBalance = 0,
+                            AccountDetail = new AccountDetail
+                            {
+                                Balances = null,
+                                PrimaryOwner = faultedAccount.PrimaryOwner,
+                                Servicer = faultedAccount.Servicer,
+                                Status = faultedAccount.Status,
+                                AccountIdentifier = faultedAccount.AccountIdentifier,
+                                AccountReference = faultedAccount.AccountReference,
+                                Type = faultedAccount.Type
+                            },
+                            AccountNumber = faultedAccount.AccountIdentifier,
+                            Transactions = null,
+                            HasErrors = true
+                        });
+                    }
                 }
 
-                var internalAccount = MapToInternalV2(accountDetails, accountDetails.Account, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
-                if (internalAccount.AccountDetail != null)
-                {
-                    bankInfo.Accounts.Add(internalAccount);
-                }
+                /* 
+                 * TODO:
+                 * Will rethrow if a non-API exception is thrown.
+                 * A bank returns 200 OK Internal Server Error now, which is wrong.
+                 * It will then rethrow the exception
+                 */
+                throw;
             }
 
             return bankInfo;

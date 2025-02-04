@@ -1139,7 +1139,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         [Newtonsoft.Json.JsonProperty("accounts", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<Account> Accounts1 { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("links", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("links", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<Link> Links { get; set; }
     }
 
@@ -1207,9 +1207,9 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
         public decimal Amount { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public CreditOrDebit CreditDebitIndicator { get; set; }
+        public CreditOrDebit? CreditDebitIndicator { get; set; }
 
         [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
@@ -1359,8 +1359,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         [Newtonsoft.Json.JsonProperty("counterParties", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<CounterParty> CounterParties { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("additionalInfo", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        [System.ComponentModel.DataAnnotations.StringLength(500, MinimumLength = 1)]
+        [Newtonsoft.Json.JsonProperty("additionalInfo", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string AdditionalInfo { get; set; }
 
         [Newtonsoft.Json.JsonProperty("merchant", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]

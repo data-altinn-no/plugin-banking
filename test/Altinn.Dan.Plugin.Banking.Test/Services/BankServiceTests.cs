@@ -122,8 +122,8 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             var account2Details = GetAccountDetails(accounts.Accounts1.ElementAt(1));
             var account3Details = GetAccountDetails(accounts.Accounts1.ElementAt(2));
             FakeGetAccounts(accounts);
-            FakeGetAccountDetails(account1Details);
-            FakeGetAccountDetails(account2Details, HttpStatusCode.InternalServerError);
+            FakeGetAccountDetails(account1Details, HttpStatusCode.InternalServerError);
+            FakeGetAccountDetails(account2Details);
             FakeGetAccountDetails(account3Details, HttpStatusCode.InternalServerError);
 
             var bankService = new BankService(_fakeLogger, _fakeMpService, _fakeOptions);

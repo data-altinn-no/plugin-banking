@@ -241,7 +241,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             return transactions;
         }
 
-        private AccountDtoV2 MapToInternalV2(
+        private static AccountDtoV2 MapToInternalV2(
             AccountDetails accountDetails,
             AccountDetail detail,
             ICollection<Transaction> transactions,

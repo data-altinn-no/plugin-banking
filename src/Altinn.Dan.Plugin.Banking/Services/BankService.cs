@@ -174,14 +174,16 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         });
                     }
                 }
-
-                /* 
-                 * TODO:
-                 * Will rethrow if a non-API exception is thrown.
-                 * A bank returns 200 OK Internal Server Error now, which is wrong.
-                 * It will then rethrow the exception
-                 */
-                throw;
+                else
+                {
+                    /* 
+                     * TODO:
+                     * Will rethrow if a non-API exception is thrown.
+                     * A bank returns 200 OK Internal Server Error now, which is wrong.
+                     * It will then rethrow the exception
+                     */
+                    throw;
+                }
             }
 
             return bankInfo;

@@ -52,6 +52,7 @@ namespace Altinn.Dan.Plugin.Banking.Models
 
     public class AccountV2
     {
+        public bool HasErrors { get; set; }
         public string AccountNumber { get; set; } // Seperate property by now. Copy of AccountDetail.AccountIdentifier
         public AccountDetailV2 AccountDetail { get; set; } // Not mapped to internal by now
         public ICollection<TransactionV2> Transactions { get; set; } // Not mapped to internal by now

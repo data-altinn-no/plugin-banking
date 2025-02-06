@@ -117,17 +117,17 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 {
                     if (accountDetails.Account == null) continue;
 
-                    var availableCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                    var availableCredit = accountDetails.Account.Balances?.FirstOrDefault(b =>
                             b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                         ?.Amount ?? 0;
-                    var availableDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                    var availableDebit = accountDetails.Account.Balances?.FirstOrDefault(b =>
                             b.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                         ?.Amount ?? 0;
 
-                    var bookedCredit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                    var bookedCredit = accountDetails.Account.Balances?.FirstOrDefault(b =>
                             b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                         ?.Amount ?? 0;
-                    var bookedDebit = accountDetails.Account.Balances.FirstOrDefault(b =>
+                    var bookedDebit = accountDetails.Account.Balances?.FirstOrDefault(b =>
                             b.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                         ?.Amount ?? 0;
 
@@ -199,7 +199,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
 
             _logger.LogInformation("Found {NumberOfAccounts} accounts for {DeceasedNin} in bank {OrganisationNumber} with accountinforequestid {AccountInfoRequestId} and correlationid {CorrelationId}",
-                accounts.Accounts1.Count, ssn[..6], bank.OrgNo, accountInfoRequestId, correlationId);
+                accounts.Accounts1?.Count, ssn[..6], bank.OrgNo, accountInfoRequestId, correlationId);
 
             return accounts;
         }

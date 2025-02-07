@@ -85,7 +85,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated.</param>
         /// <returns>Valid response - A list of accounts - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate)
+        public virtual System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string? additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate)
         {
             return ListAccountsAsync(accountInfoRequestID, correlationID, legal_Mandate, partyID, onlyPrimaryOwner, additionalReferenceID, additionalReferenceIDType, requesterID, fromDate, toDate, System.Threading.CancellationToken.None);
         }
@@ -314,7 +314,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated</param>
         /// <returns>Valid response - Account details - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<AccountDetails> ShowAccountByIdAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType2? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<AccountDetails> ShowAccountByIdAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string? additionalReferenceID, AdditionalReferenceIDType2? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
         {
             if (accountReference == null)
                 throw new System.ArgumentNullException("accountReference");
@@ -535,7 +535,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated</param>
         /// <returns>Valid response - A list of transactions - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType3? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string? additionalReferenceID, AdditionalReferenceIDType3? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
         {
             if (accountReference == null)
                 throw new System.ArgumentNullException("accountReference");

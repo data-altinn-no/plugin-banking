@@ -147,6 +147,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                     orgNumber,
                     new BankConfig
                     {
+                        OrgNo = orgNumber,
                         Name = bankName,
                         Client = _client,
                         MaskinportenEnv = "test1",

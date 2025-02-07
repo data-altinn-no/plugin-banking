@@ -126,19 +126,18 @@ namespace Altinn.Dan.Plugin.Banking.Services
                     if (accountDetails?.Account == null) continue;
 
                     var balances = accountDetails.Account?.Balances;
-                    if (balances == null) continue;
 
-                    var availableCredit = balances.FirstOrDefault(b =>
+                    var availableCredit = balances?.FirstOrDefault(b =>
                             b?.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                         ?.Amount ?? 0;
-                    var availableDebit = balances.FirstOrDefault(b =>
+                    var availableDebit = balances?.FirstOrDefault(b =>
                             b?.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                         ?.Amount ?? 0;
 
-                    var bookedCredit = balances.FirstOrDefault(b =>
+                    var bookedCredit = balances?.FirstOrDefault(b =>
                             b?.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
                         ?.Amount ?? 0;
-                    var bookedDebit = balances.FirstOrDefault(b =>
+                    var bookedDebit = balances?.FirstOrDefault(b =>
                             b?.Type == BalanceType.BookedBalance && b.CreditDebitIndicator == CreditOrDebit.Debit)
                         ?.Amount ?? 0;
 

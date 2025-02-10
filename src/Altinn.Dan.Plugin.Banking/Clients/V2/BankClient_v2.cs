@@ -18,10 +18,12 @@ using Altinn.Dan.Plugin.Banking.Config;
 #pragma warning disable 8604 // Disable "CS8604 Possible null reference argument for parameter"
 #pragma warning disable 8625 // Disable "CS8625 Cannot convert null literal to non-nullable reference type"
 
+#nullable enable
 namespace Altinn.Dan.Plugin.Banking.Clients.V2
 {
     using System = global::System;
     using System.Threading.Tasks;
+    using System.Transactions;
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Bank_v2
@@ -83,7 +85,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated.</param>
         /// <returns>Valid response - A list of accounts - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate)
+        public virtual System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string? additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate)
         {
             return ListAccountsAsync(accountInfoRequestID, correlationID, legal_Mandate, partyID, onlyPrimaryOwner, additionalReferenceID, additionalReferenceIDType, requesterID, fromDate, toDate, System.Threading.CancellationToken.None);
         }
@@ -312,7 +314,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated</param>
         /// <returns>Valid response - Account details - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<AccountDetails> ShowAccountByIdAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType2? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<AccountDetails> ShowAccountByIdAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string? additionalReferenceID, AdditionalReferenceIDType2? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
         {
             if (accountReference == null)
                 throw new System.ArgumentNullException("accountReference");
@@ -533,7 +535,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated</param>
         /// <returns>Valid response - A list of transactions - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType3? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string? additionalReferenceID, AdditionalReferenceIDType3? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
         {
             if (accountReference == null)
                 throw new System.ArgumentNullException("accountReference");
@@ -610,230 +612,8 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var test = await response_.Content.ReadAsStringAsync();
+                            var test = await response_.Content!.ReadAsStringAsync();
                             var objectResponse_ = await ReadObjectResponseAsync<Transactions>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 405)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 406)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 429)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Role holders for the specified account. Empty list if no hits.
-        /// </summary>
-        /// <param name="accountReference">Unique reference to the account. Shall not match the account number.</param>
-        /// <param name="accountInfoRequestID">Unique reference number / case number that follows the case throughout the different requests.</param>
-        /// <param name="correlationID">Correlation ID, unique identifier for the technical request</param>
-        /// <param name="legal_Mandate">The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.</param>
-        /// <param name="additionalReferenceID">Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.</param>
-        /// <param name="additionalReferenceIDType">What type of reference to expect in AdditionalReferenceID</param>
-        /// <param name="requesterID">Unique identifier of the user who makes the request at the public agency.</param>
-        /// <param name="fromDate">From date, current date if not stated</param>
-        /// <param name="toDate">To date, current date if not stated</param>
-        /// <returns>Valid response - A list of roles - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Roles> ListRolesAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType5? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate)
-        {
-            return ListRolesAsync(accountReference, accountInfoRequestID, correlationID, legal_Mandate, additionalReferenceID, additionalReferenceIDType, requesterID, fromDate, toDate, System.Threading.CancellationToken.None);
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <summary>
-        /// Role holders for the specified account. Empty list if no hits.
-        /// </summary>
-        /// <param name="accountReference">Unique reference to the account. Shall not match the account number.</param>
-        /// <param name="accountInfoRequestID">Unique reference number / case number that follows the case throughout the different requests.</param>
-        /// <param name="correlationID">Correlation ID, unique identifier for the technical request</param>
-        /// <param name="legal_Mandate">The Legal basis used by data consumers in order to fetch data. Should be validated by the data provider.</param>
-        /// <param name="additionalReferenceID">Reference ID based on AdditionalReferenceIDType. Should be validated according to the legal-mandate.</param>
-        /// <param name="additionalReferenceIDType">What type of reference to expect in AdditionalReferenceID</param>
-        /// <param name="requesterID">Unique identifier of the user who makes the request at the public agency.</param>
-        /// <param name="fromDate">From date, current date if not stated</param>
-        /// <param name="toDate">To date, current date if not stated</param>
-        /// <returns>Valid response - A list of roles - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Roles> ListRolesAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string additionalReferenceID, AdditionalReferenceIDType5? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
-        {
-            if (accountReference == null)
-                throw new System.ArgumentNullException("accountReference");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-
-                    if (accountInfoRequestID == null)
-                        throw new System.ArgumentNullException("accountInfoRequestID");
-                    request_.Headers.TryAddWithoutValidation("AccountInfoRequestID", ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (correlationID == null)
-                        throw new System.ArgumentNullException("correlationID");
-                    request_.Headers.TryAddWithoutValidation("CorrelationID", ConvertToString(correlationID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (legal_Mandate == null)
-                        throw new System.ArgumentNullException("legal_Mandate");
-                    request_.Headers.TryAddWithoutValidation("Legal-Mandate", ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (additionalReferenceID != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceID", ConvertToString(additionalReferenceID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (additionalReferenceIDType != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceIDType", ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (requesterID != null)
-                        request_.Headers.TryAddWithoutValidation("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "accounts/{accountReference}/roles"
-                    urlBuilder_.Append("accounts/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(accountReference, System.Globalization.CultureInfo.InvariantCulture)));
-                    urlBuilder_.Append("/roles");
-                    urlBuilder_.Append('?');
-                    if (fromDate != null)
-                    {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("fromDate")).Append('=').Append(System.Uri.EscapeDataString(fromDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    }
-                    if (toDate != null)
-                    {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("toDate")).Append('=').Append(System.Uri.EscapeDataString(toDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    }
-                    urlBuilder_.Length--;
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Roles>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
@@ -1059,88 +839,82 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Account
     {
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("status", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public AccountStatus Status { get; set; }
+        public AccountStatus? Status { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("servicer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public FinancialInstitution Servicer { get; set; }
+        [Newtonsoft.Json.JsonProperty("servicer", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public FinancialInstitution? Servicer { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("accountIdentifier", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string AccountIdentifier { get; set; }
+        [Newtonsoft.Json.JsonProperty("accountIdentifier")]
+        public required string AccountIdentifier { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("accountReference", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string AccountReference { get; set; }
+        [Newtonsoft.Json.JsonProperty("accountReference")]
+        public required string AccountReference { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("type", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public AccountType Type { get; set; }
+        public AccountType? Type { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("primaryOwner", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public AccountRole PrimaryOwner { get; set; }
+        [Newtonsoft.Json.JsonProperty("primaryOwner", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public AccountRole? PrimaryOwner { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AccountDetail
     {
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("status", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public AccountStatus Status { get; set; }
+        public AccountStatus? Status { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("servicer", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public FinancialInstitution Servicer { get; set; }
+        [Newtonsoft.Json.JsonProperty("servicer", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public FinancialInstitution? Servicer { get; set; }
 
         [Newtonsoft.Json.JsonProperty("accountIdentifier")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]
-        public string AccountIdentifier { get; set; }
+        public required string AccountIdentifier { get; set; }
 
         [Newtonsoft.Json.JsonProperty("accountReference")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]
-        public string AccountReference { get; set; }
+        public required string AccountReference { get; set; }
 
         [Newtonsoft.Json.JsonProperty("type", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public AccountType Type { get; set; }
+        public AccountType? Type { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("balances", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Balance> Balances { get; set; }
+        [Newtonsoft.Json.JsonProperty("balances", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<Balance>? Balances { get; set; }
 
         [Newtonsoft.Json.JsonProperty("primaryOwner", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public AccountRole PrimaryOwner { get; set; }
+        public AccountRole? PrimaryOwner { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AccountDetails
     {
-        [Newtonsoft.Json.JsonProperty("responseDetails", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public ResponseDetails ResponseDetails { get; set; } = new ResponseDetails();
+        [Newtonsoft.Json.JsonProperty("responseDetails")]
+        public ResponseDetails? ResponseDetails { get; set; } = new ResponseDetails();
 
-        [Newtonsoft.Json.JsonProperty("account", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public AccountDetail Account { get; set; }
+        [Newtonsoft.Json.JsonProperty("account", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public AccountDetail? Account { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AccountRole
     {
-        [Newtonsoft.Json.JsonProperty("identifier", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public Identifier Identifier { get; set; }
+        [Newtonsoft.Json.JsonProperty("identifier", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public Identifier? Identifier { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Accounts
     {
-        [Newtonsoft.Json.JsonProperty("responseDetails", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
+        [Newtonsoft.Json.JsonProperty("responseDetails")]
         public ResponseDetails ResponseDetails { get; set; } = new ResponseDetails();
 
-        [Newtonsoft.Json.JsonProperty("accounts", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Account> Accounts1 { get; set; }
+        [Newtonsoft.Json.JsonProperty("accounts", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<Account>? Accounts1 { get; set; }
 
         [Newtonsoft.Json.JsonProperty("links", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Link> Links { get; set; }
+        public System.Collections.Generic.ICollection<Link>? Links { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1200,28 +974,28 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Balance
     {
-        [Newtonsoft.Json.JsonProperty("creditLineIncluded", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool CreditLineIncluded { get; set; }
+        [Newtonsoft.Json.JsonProperty("creditLineIncluded", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? CreditLineIncluded { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("amount", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
-        public decimal Amount { get; set; }
+        public decimal? Amount { get; set; }
 
         [Newtonsoft.Json.JsonProperty("creditDebitIndicator", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public CreditOrDebit? CreditDebitIndicator { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("type", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public BalanceType Type { get; set; }
+        public BalanceType? Type { get; set; }
 
         [Newtonsoft.Json.JsonProperty("creditLineAmount", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
         public decimal? CreditLineAmount { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("currency", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("currency", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"[A-Z]{3,3}")]
-        public string Currency { get; set; }
+        public string? Currency { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1241,20 +1015,19 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     {
         [Newtonsoft.Json.JsonProperty("freeText", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
-        public string FreeText { get; set; }
+        public string? FreeText { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CounterParty
     {
         [Newtonsoft.Json.JsonProperty("identifier", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public Identifier Identifier { get; set; }
+        public Identifier? Identifier { get; set; }
 
         [Newtonsoft.Json.JsonProperty("name", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.StringLength(140)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
-
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum CreditOrDebit
@@ -1268,35 +1041,31 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
 
     }
 
-
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class FinancialInstitution
     {
-        [Newtonsoft.Json.JsonProperty("identifier", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public Identifier Identifier { get; set; }
+        [Newtonsoft.Json.JsonProperty("identifier", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public Identifier? Identifier { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        [System.ComponentModel.DataAnnotations.StringLength(140, MinimumLength = 1)]
-        public string Name { get; set; }
+        [Newtonsoft.Json.JsonProperty("name", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [System.ComponentModel.DataAnnotations.StringLength(140)]
+        public string? Name { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Identifier
     {
         [Newtonsoft.Json.JsonProperty("value")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]
-        public string Value { get; set; }
+        public required string Value { get; set; }
 
         [Newtonsoft.Json.JsonProperty("type")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public IdentifierType Type { get; set; }
+        public required IdentifierType Type { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum IdentifierType
     {
-
         [System.Runtime.Serialization.EnumMember(Value = @"countryIdentificationCode")]
         CountryIdentificationCode = 0,
 
@@ -1307,125 +1076,74 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Link
     {
-        [Newtonsoft.Json.JsonProperty("rel", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 1)]
-        public string Rel { get; set; }
+        [Newtonsoft.Json.JsonProperty("rel")]
+        [System.ComponentModel.DataAnnotations.StringLength(50)]
+        public required string Rel { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("href", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(500, MinimumLength = 1)]
-        public string Href { get; set; }
+        [Newtonsoft.Json.JsonProperty("href")]
+        [System.ComponentModel.DataAnnotations.StringLength(500)]
+        public required string Href { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ResponseDetails
     {
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [Newtonsoft.Json.JsonProperty("status")]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public ResponseDetailsStatus Status { get; set; }
+        public ResponseDetailsStatus? Status { get; set; }
 
         [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        [System.ComponentModel.DataAnnotations.StringLength(500, MinimumLength = 1)]
-        public string Message { get; set; }
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Roles
-    {
-        [Newtonsoft.Json.JsonProperty("responseDetails", Required = Newtonsoft.Json.Required.Always)]
-        [System.ComponentModel.DataAnnotations.Required]
-        public ResponseDetails ResponseDetails { get; set; } = new ResponseDetails();
-
-        [Newtonsoft.Json.JsonProperty("roles", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<AccountRole> Roles1 { get; set; }
+        [System.ComponentModel.DataAnnotations.StringLength(500)]
+        public string? Message { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Transaction
     {
         [Newtonsoft.Json.JsonProperty("transactionIdentifier")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]
-        public string TransactionIdentifier { get; set; }
+        public required string TransactionIdentifier { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("creditDebitIndicator", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public CreditOrDebit CreditDebitIndicator { get; set; }
+        public required CreditOrDebit CreditDebitIndicator { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("status", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public TransactionStatus? Status { get; set; }
 
         [Newtonsoft.Json.JsonProperty("transactionCode", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public BankTransactionCode TransactionCode { get; set; }
+        public required BankTransactionCode TransactionCode { get; set; }
 
         [Newtonsoft.Json.JsonProperty("counterParties", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<CounterParty> CounterParties { get; set; }
+        public System.Collections.Generic.ICollection<CounterParty>? CounterParties { get; set; }
 
         [Newtonsoft.Json.JsonProperty("additionalInfo", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
-        public string AdditionalInfo { get; set; }
+        public string? AdditionalInfo { get; set; }
 
         [Newtonsoft.Json.JsonProperty("merchant", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        [System.ComponentModel.DataAnnotations.StringLength(140, MinimumLength = 1)]
-        public string Merchant { get; set; }
+        [System.ComponentModel.DataAnnotations.StringLength(140)]
+        public string? Merchant { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("registered", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.DateTimeOffset Registered { get; set; }
+        [Newtonsoft.Json.JsonProperty("registered", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? Registered { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Always, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("amount", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [System.ComponentModel.DataAnnotations.Range(0D, double.MaxValue)]
-        public double Amount { get; set; }
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum TransactionReferenceType
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"accountServicerReference")]
-        AccountServicerReference = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"archiveReference")]
-        ArchiveReference = 1,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"chequeNumber")]
-        ChequeNumber = 2,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"endToEndIdentification")]
-        EndToEndIdentification = 3,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"instructionIdentification")]
-        InstructionIdentification = 4,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"invoiceNumber")]
-        InvoiceNumber = 5,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"mandateIdentification")]
-        MandateIdentification = 6,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"messageIdentification")]
-        MessageIdentification = 7,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"otherReference")]
-        OtherReference = 8,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"paymentInformationIdentification")]
-        PaymentInformationIdentification = 9,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"remittanceReference")]
-        RemittanceReference = 10,
-
+        public double? Amount { get; set; }
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Transactions
     {
         [Newtonsoft.Json.JsonProperty("responseDetails")]
-        [System.ComponentModel.DataAnnotations.Required]
         public ResponseDetails ResponseDetails { get; set; } = new ResponseDetails();
 
-        [Newtonsoft.Json.JsonProperty("transactions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Transaction> Transactions1 { get; set; }
+        [Newtonsoft.Json.JsonProperty("transactions", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<Transaction>? Transactions1 { get; set; }
 
         [Newtonsoft.Json.JsonProperty("links", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<Link> Links { get; set; }
+        public System.Collections.Generic.ICollection<Link>? Links { get; set; }
     }
 
     /// <summary>
@@ -1437,14 +1155,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1456,14 +1174,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider.
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1475,14 +1193,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1494,14 +1212,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1513,14 +1231,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1532,14 +1250,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1551,14 +1269,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1570,14 +1288,14 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
     }
 
     /// <summary>
@@ -1589,14 +1307,29 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <summary>
         /// error code, for automatic handling
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("code", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Code { get; set; }
+        [Newtonsoft.Json.JsonProperty("code", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Code { get; set; }
 
         /// <summary>
         /// Best possible description of the error from Data Provider
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("message", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Message { get; set; }
+        [Newtonsoft.Json.JsonProperty("message", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Message { get; set; }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum TransactionStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"booked")]
+        Booked = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"pending")]
+        Pending = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"info")]
+        Info = 2,
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1636,30 +1369,6 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum AdditionalReferenceIDType4
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"pol1")]
-        Pol1 = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"srf")]
-        Srf = 1,
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum AdditionalReferenceIDType5
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"pol1")]
-        Pol1 = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"srf")]
-        Srf = 1,
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ResponseDetailsStatus
     {
 
@@ -1680,8 +1389,6 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         }
     }
 
-
-
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ApiException : System.Exception
     {
@@ -1697,7 +1404,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
             : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)) + " correlationid " + correlationId, innerException)
         {
             StatusCode = statusCode;
-            Response = response;
+            Response = response ?? string.Empty;
             Headers = headers;
             CorrelationId = correlationId;
         }

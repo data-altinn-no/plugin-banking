@@ -59,9 +59,9 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             var orgNumber = "789";
             var bankList = GetDefaultBankConfig(bankName, orgNumber);
 
-            var accounts = GetDefaultAccounts(bankName, orgNumber);
-            var account1Details = GetAccountDetails(accounts.Accounts1.ElementAt(0));
-            var account2Details = GetAccountDetails(accounts.Accounts1.ElementAt(1));
+            var accounts = GetDefaultAccounts(bankName, orgNumber)!;
+            var account1Details = GetAccountDetails(accounts.Accounts1!.ElementAt(0))!;
+            var account2Details = GetAccountDetails(accounts.Accounts1!.ElementAt(1))!;
             FakeGetAccounts(accounts);
             FakeGetAccountDetails(account1Details);
             FakeGetAccountDetails(account2Details);
@@ -117,10 +117,10 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             var bankList = GetDefaultBankConfig(bankName, orgNumber);
 
             var accounts = GetDefaultAccounts(bankName, orgNumber);
-            accounts.Accounts1.Add(GetAccount(bankName, orgNumber, "3"));
-            var account1Details = GetAccountDetails(accounts.Accounts1.ElementAt(0));
-            var account2Details = GetAccountDetails(accounts.Accounts1.ElementAt(1));
-            var account3Details = GetAccountDetails(accounts.Accounts1.ElementAt(2));
+            accounts.Accounts1!.Add(GetAccount(bankName, orgNumber, "3"));
+            var account1Details = GetAccountDetails(accounts.Accounts1.ElementAt(0))!;
+            var account2Details = GetAccountDetails(accounts.Accounts1.ElementAt(1))!;
+            var account3Details = GetAccountDetails(accounts.Accounts1.ElementAt(2))!;
             FakeGetAccounts(accounts);
             FakeGetAccountDetails(account1Details, HttpStatusCode.InternalServerError);
             FakeGetAccountDetails(account2Details);
@@ -147,6 +147,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                     orgNumber,
                     new BankConfig
                     {
+                        OrgNo = orgNumber,
                         Name = bankName,
                         Client = _client,
                         MaskinportenEnv = "test1",
@@ -158,7 +159,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
 
         private void FakeGetAccountDetails(AccountDetails accountDetails, HttpStatusCode httpStatusCode = HttpStatusCode.OK)
         {
-            A.CallTo(() => _handler.FakeSendAsync(A<HttpRequestMessage>.That.Matches(x => x.RequestUri != null && x.RequestUri.AbsoluteUri.Contains($"accounts/{accountDetails.Account.AccountReference}")), A<CancellationToken>._))
+            A.CallTo(() => _handler.FakeSendAsync(A<HttpRequestMessage>.That.Matches(x => x.RequestUri != null && x.RequestUri.AbsoluteUri.Contains($"accounts/{accountDetails.Account!.AccountReference}")), A<CancellationToken>._))
                 .Returns(Task.FromResult(new HttpResponseMessage
                 {
                     StatusCode = httpStatusCode,
@@ -177,7 +178,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                 .NumberOfTimes(1);
         }
 
-        private static AccountDetails GetAccountDetails(Account account)
+        private static AccountDetails? GetAccountDetails(Account account)
         {
             return new AccountDetails
             {
@@ -192,7 +193,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                     AccountReference = account.AccountReference,
                     PrimaryOwner = account.PrimaryOwner,
                     Status = account.Status,
-                    Servicer = account.Servicer,
+                    Servicer = account.Servicer!,
                     Type = account.Type,
                     Balances = new List<Balance>
                     {

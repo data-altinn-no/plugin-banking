@@ -35,7 +35,6 @@ namespace Altinn.Dan.Plugin.Banking.Services
             _settings = applicationSettings.Value;
         }
 
-
         public async Task<BankResponse> GetAccounts(string ssn, Dictionary<string, BankConfig> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
         {
             BankResponse bankResponse = new BankResponse { BankAccounts = [] };
@@ -115,17 +114,27 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 return bankInfo;
             }
 
-            Task<AccountDetails>[] accountsDetailsTasks = accounts.Accounts1.Select(x => GetAccountById(bankClient, x, bank, accountInfoRequestId, fromDate, toDate)).ToArray();
-
-            var results = Task.WhenAll(accountsDetailsTasks);
-            try
+            /*
+             * TODO: Could this only be in Nordea test system?
+             * 
+             * Nordea has issues with parallell requests, so we need to fetch them one by one
+             * We have tried using the following:
+             * accountTasks.Add(Task.Run(async () => { ... })) but it does not work
+             * Task<AccountDetails>[] accountsDetailsTasks = accounts.Accounts1.Select(x => GetAccountById(bankClient, x, bank, accountInfoRequestId, fromDate, toDate)).ToArray();
+             * 
+             * Task.WhenAll(...)
+             * 
+             * Both of the functions will result in a 200 OK Internal Server Error from Nordea for some of the requests
+             * This only occurs when talking to Nordea
+            */
+            foreach (var account in accounts.Accounts1)
             {
-                AccountDetails[] accountsDetails = await results;
-                foreach (var accountDetails in accountsDetails)
+                try
                 {
-                    if (accountDetails?.Account == null) continue;
+                    var result = await GetAccountById(bankClient, account, bank, accountInfoRequestId, fromDate, toDate);
+                    if (result?.Account == null) continue;
 
-                    var balances = accountDetails.Account?.Balances;
+                    var balances = result.Account?.Balances;
 
                     var availableCredit = balances?.FirstOrDefault(b =>
                             b?.Type == BalanceType.AvailableBalance && b.CreditDebitIndicator == CreditOrDebit.Credit)
@@ -143,38 +152,29 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
                     if (includeTransactions)
                     {
-                        transactions = await ListTransactionsForAccount(bankClient, accountDetails, bank, accountInfoRequestId, fromDate, toDate);
+                        transactions = await ListTransactionsForAccount(bankClient, result, bank, accountInfoRequestId, fromDate, toDate);
                     }
 
-                    var internalAccount = MapToInternalV2(accountDetails.Account!, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    var internalAccount = MapToInternalV2(result.Account!, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                     if (internalAccount.AccountDetail == null) continue;
 
                     bankInfo.Accounts.Add(internalAccount);
                 }
-            }
-            catch (Exception e)
-            {
-                if (e is ApiException k && k.StatusCode >= 400)
+                catch (Exception e)
                 {
-                    var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
-                    var successfulAccounts = await Task.WhenAll(successfulTasks);
-                    var faultedAccounts = accounts.Accounts1.Where(x => !successfulAccounts.Any(y => y.Account!.AccountReference == x.AccountReference)).ToList();
-
-                    foreach (var faultedAccount in faultedAccounts)
+                    if (e is ApiException k && k.StatusCode >= 400)
                     {
-                        faultedAccount.LogGetAccountByIdError(_logger, k, bank, accountInfoRequestId);
-                        bankInfo.Accounts.Add(faultedAccount.ToDefaultDto());
+                        account.LogGetAccountByIdError(_logger, k, bank, accountInfoRequestId);
+                        bankInfo.Accounts.Add(account.ToDefaultDto());
                     }
-                }
-                else
-                {
-                    /* 
-                     * TODO:
-                     * Will rethrow if a non-API exception is thrown.
-                     * A bank returns 200 OK Internal Server Error now, which is wrong.
-                     * It will then rethrow the exception
-                     */
-                    throw;
+                    else
+                    {
+                        /* 
+                         * TODO:
+                         * Will rethrow if a non-API exception is thrown.
+                         */
+                        throw;
+                    }
                 }
             }
 

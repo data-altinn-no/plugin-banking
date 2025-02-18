@@ -135,7 +135,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.BankAccounts.Count);
             Assert.IsFalse(result.BankAccounts.Single().HasErrors);
-            Assert.AreEqual(2, result.BankAccounts.Single().Accounts.Count);
+            Assert.AreEqual(3, result.BankAccounts.Single().Accounts.Count);
             Assert.IsTrue(result.BankAccounts.Single().Accounts.Any(x => x.HasErrors));
         }
 

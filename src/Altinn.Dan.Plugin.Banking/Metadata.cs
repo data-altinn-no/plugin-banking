@@ -102,7 +102,7 @@ namespace Altinn.Dan.Plugin.Banking
                             EvidenceParamName = "TilDato",
                             ParamType = EvidenceParamType.DateTime,
                             Required = false
-                        },                       
+                        },
                         new EvidenceParameter()
                         {
                             EvidenceParamName = "ReferanseId",
@@ -124,6 +124,7 @@ namespace Altinn.Dan.Plugin.Banking
                     EvidenceSource = SOURCE,
                     BelongsToServiceContexts = new List<string> { "OED" },
                     RequiredScopes = "bits:kundeforhold",
+                    Timeout = 60,
                     Values = new List<EvidenceValue>()
                     {
                         new EvidenceValue()

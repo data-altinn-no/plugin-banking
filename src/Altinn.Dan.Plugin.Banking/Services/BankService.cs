@@ -155,7 +155,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         transactions = await ListTransactionsForAccount(bankClient, result, bank, accountInfoRequestId, fromDate, toDate);
                     }
 
-                    var internalAccount = MapToInternalV2(result.Account!, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    var internalAccount = MapToInternalV2(result.Account!, account.Type, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                     if (internalAccount.AccountDetail == null) continue;
 
                     bankInfo.Accounts.Add(internalAccount);
@@ -238,11 +238,12 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
         private static AccountDtoV2 MapToInternalV2(
             AccountDetail account,
+            AccountType? type,
             ICollection<Transaction>? transactions,
             decimal availableBalance,
             decimal bookedBalance)
         {
-            account.Type = account.Type;
+            account.Type = type;
             account.AccountIdentifier = account.AccountIdentifier;
             account.AccountReference = account.AccountReference;
 

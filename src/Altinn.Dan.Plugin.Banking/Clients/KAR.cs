@@ -1,8 +1,10 @@
 using Altinn.Dan.Plugin.Banking.Models;
 using System;
 using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Altinn.Dan.Plugin.Banking.Clients
 {
@@ -17,7 +19,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients
             if (!header.Scheme.Equals("bearer", StringComparison.OrdinalIgnoreCase))
                 throw new Exception($"Invalid auth header {header.Scheme} found for {ssn} in KAR interface");
 
-            return MapToInternal(await GetCustomerRelationAsync(header.Parameter, ssn, correlationId, "Prosjekt OED", accountInfoRequestId, fromDate, toDate, ct ?? CancellationToken.None));
+            return MapToInternal(await GetCustomerRelationAsync(header.Parameter, ssn, correlationId, PluginConstants.LegalMandate, accountInfoRequestId, fromDate, toDate, ct ?? CancellationToken.None));
         }
 
         private static KARResponse MapToInternal(ListCustomerRelation listCustomerRelation)

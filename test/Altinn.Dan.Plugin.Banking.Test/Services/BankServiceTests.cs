@@ -139,6 +139,38 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             Assert.IsTrue(result.BankAccounts.Single().Accounts.Any(x => x.HasErrors));
         }
 
+        [TestMethod]
+        public async Task GetAccounts_TypeFromAccountList_AccountHasType()
+        {
+            // Arrange
+            var nin = "12345678901";
+            var fromDate = DateTime.Now.AddMonths(-1);
+            var toDate = DateTime.Now;
+            var bankName = "bank1";
+            var orgNumber = "789";
+            var bankList = GetDefaultBankConfig(bankName, orgNumber);
+
+            var accounts = GetDefaultAccounts(bankName, orgNumber);
+            var account1Details = GetAccountDetails(accounts.Accounts1!.ElementAt(0))!;
+            var account2Details = GetAccountDetails(accounts.Accounts1!.ElementAt(1))!;
+            FakeGetAccounts(accounts);
+            FakeGetAccountDetails(account1Details);
+            FakeGetAccountDetails(account2Details);
+
+            var bankService = new BankService(_fakeLogger, _fakeMpService, _fakeOptions);
+
+            // Act
+            var result = await bankService.GetAccounts(nin, bankList, fromDate, toDate, Guid.NewGuid(), false);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(1, result.BankAccounts.Count);
+            Assert.IsFalse(result.BankAccounts.Single().HasErrors);
+            Assert.AreEqual(2, result.BankAccounts.Single().Accounts.Count);
+            Assert.IsFalse(result.BankAccounts.Single().Accounts.Any(x => x.HasErrors));
+            Assert.IsTrue(result.BankAccounts.Single().Accounts.All(x => x.AccountDetail.Type == accounts.Accounts1!.ElementAt(0).Type));
+        }
+
         private Dictionary<string, BankConfig> GetDefaultBankConfig(string bankName, string orgNumber)
         {
             return new Dictionary<string, BankConfig>
@@ -194,7 +226,6 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                     PrimaryOwner = account.PrimaryOwner,
                     Status = account.Status,
                     Servicer = account.Servicer!,
-                    Type = account.Type,
                     Balances = new List<Balance>
                     {
                         new Balance

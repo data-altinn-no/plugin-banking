@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
 using Bank_v2 = Altinn.Dan.Plugin.Banking.Clients.V2;
 
@@ -155,7 +156,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                         transactions = await ListTransactionsForAccount(bankClient, result, bank, accountInfoRequestId, fromDate, toDate);
                     }
 
-                    var internalAccount = MapToInternalV2(result.Account!, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
+                    var internalAccount = MapToInternalV2(result.Account!, account.Type, transactions?.Transactions1, availableCredit - availableDebit, bookedCredit - bookedDebit);
                     if (internalAccount.AccountDetail == null) continue;
 
                     bankInfo.Accounts.Add(internalAccount);
@@ -188,7 +189,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             _logger.LogInformation("Preparing request to {BankName}, url {BankAudience}, version {BankApiVersion}, accountinforequestid {AccountInfoRequestId}, correlationid {CorrelationId}, fromdate {FromDate}, todate {ToDate}",
                             bank.Name, bank.BankAudience, bank.ApiVersion, accountInfoRequestId, correlationId, fromDate, toDate);
 
-            var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, "OED", ssn, true, null, null, null, fromDate, toDate);
+            var accounts = await bankClient.ListAccountsAsync(accountInfoRequestId, correlationId, PluginConstants.LegalMandate, ssn, true, null, null, null, fromDate, toDate);
 
             _logger.LogInformation("Found {NumberOfAccounts} accounts for {DeceasedNin} in bank {OrganisationNumber} with accountinforequestid {AccountInfoRequestId} and correlationid {CorrelationId}",
                 accounts.Accounts1?.Count, ssn[..6], bank.OrgNo, accountInfoRequestId, correlationId);
@@ -206,7 +207,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
             var detailsTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountDetailsRequestTimeoutSecs));
             var details = await bankClient.ShowAccountByIdAsync(account.AccountReference, accountInfoRequestId,
-                correlationIdDetails, "OED", null, null, null, fromDate, toDate, detailsTimeout.Token);
+                correlationIdDetails, PluginConstants.LegalMandate, null, null, null, fromDate, toDate, detailsTimeout.Token);
 
             _logger.LogInformation("Retrieved account details: bank {BankName} accountreference {AccountReference} dob {DateOfBirth} responseDetailsStatus {ResponseDetailsStatus} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
                 bank.Name, account.AccountReference, primaryOwnerNin, details.ResponseDetails?.Status, accountInfoRequestId, correlationIdDetails);
@@ -228,7 +229,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
                 bank.Name, account!.AccountReference, primaryOwnerNin, accountInfoRequestId, correlationIdTransactions);
 
             var transactions = await bankClient.ListTransactionsAsync(account.AccountReference, accountInfoRequestId,
-                correlationIdTransactions, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
+                correlationIdTransactions, PluginConstants.LegalMandate, null, null, null, fromDate, toDate, transactionsTimeout.Token);
 
             _logger.LogInformation("Retrieved transactions: bank {BankName} accountreference {AccountReference} dob {DateOfBirth} transaction count {NumberOfTransactions} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
                 bank.Name, account.AccountIdentifier, primaryOwnerNin, transactions.Transactions1?.Count, accountInfoRequestId, correlationIdTransactions);
@@ -238,11 +239,12 @@ namespace Altinn.Dan.Plugin.Banking.Services
 
         private static AccountDtoV2 MapToInternalV2(
             AccountDetail account,
+            AccountType? type,
             ICollection<Transaction>? transactions,
             decimal availableBalance,
             decimal bookedBalance)
         {
-            account.Type = account.Type;
+            account.Type = type;
             account.AccountIdentifier = account.AccountIdentifier;
             account.AccountReference = account.AccountReference;
 
@@ -277,7 +279,7 @@ namespace Altinn.Dan.Plugin.Banking.Services
             Transactions transactions;
             try
             {
-                transactions = await bankClient.ListTransactionsAsync(accountReference, accountInfoRequestId, correlationId, "OED", null, null, null, fromDate, toDate, transactionsTimeout.Token);
+                transactions = await bankClient.ListTransactionsAsync(accountReference, accountInfoRequestId, correlationId, PluginConstants.LegalMandate, null, null, null, fromDate, toDate, transactionsTimeout.Token);
             }
             catch (Exception e)
             {

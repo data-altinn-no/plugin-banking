@@ -106,7 +106,7 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated.</param>
         /// <returns>Valid response - A list of accounts - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Accounts> ListAccountsAsync(System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string partyID, bool onlyPrimaryOwner, string? additionalReferenceID, AdditionalReferenceIDType? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
         {
             if (onlyPrimaryOwner == null)
                 throw new System.ArgumentNullException("onlyPrimaryOwner");

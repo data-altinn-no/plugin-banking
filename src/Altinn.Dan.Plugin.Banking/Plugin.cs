@@ -52,7 +52,7 @@ namespace Altinn.Dan.Plugin.Banking
         public async Task<HttpResponseData> GetBanktransaksjoner(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
             FunctionContext context)
-        {            
+        {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
             return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesBankTransaksjoner(evidenceHarvesterRequest));
         }
@@ -141,7 +141,7 @@ namespace Altinn.Dan.Plugin.Banking
 
                 var filteredEndpoint = bankEndpoints.Where(item => _settings.ImplementedBanks.Contains(item.OrgNo) && item.OrgNo == orgno && item.Version.ToUpper() == "V2").FirstOrDefault();
                 var ecb = new EvidenceBuilder(new Metadata(), "Kontotransaksjoner");
-              
+
                 var bankConfig = CreateBankConfigurations(filteredEndpoint);
                 var transactions = await _bankService.GetTransactionsForAccount(ssn, bankConfig, fromDate, toDate, accountInfoRequestId, accountRef);
 
@@ -188,7 +188,7 @@ namespace Altinn.Dan.Plugin.Banking
                 {
                     DateTimeOffset fromDateDto = new DateTimeOffset(fromDate);
                     DateTimeOffset toDateDto = new DateTimeOffset(toDate);
-                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
+                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected
                     karResponse = await _karService.GetBanksForCustomer(ssn, fromDateDto, toDateDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
                 }
                 catch (ApiException e)
@@ -200,11 +200,11 @@ namespace Altinn.Dan.Plugin.Banking
                     throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_KAR_NOT_AVAILABLE_ERROR, $"Request to KAR timed out (accountInfoRequestId: {accountInfoRequestId}, correlationID: {correlationId})");
                 }
 
-                var response = new BankRelations();               
+                var response = new BankRelations();
                 foreach(var relation in karResponse.Banks)
                 {
                     response.Banks.Add(new BankRelation() { BankName = relation.BankName, OrganizationNumber = relation.OrganizationID, IsImplemented = _settings.ImplementedBanks.Contains(relation.OrganizationID) });
-                }                
+                }
 
                 var ecb = new EvidenceBuilder(new Metadata(), "Kundeforhold");
                 ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(response), "", false);
@@ -328,7 +328,7 @@ namespace Altinn.Dan.Plugin.Banking
 
             if (engine.TotalRecords > 0 && endpoints.Count > 0)
             {
-                result = await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(60));
+                result = await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(300));
                 _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
             }
             else
@@ -390,7 +390,7 @@ namespace Altinn.Dan.Plugin.Banking
                 {
                     DateTimeOffset fromDateDto = new DateTimeOffset(fromDate);
                     DateTimeOffset toDateDto = new DateTimeOffset(toDate);
-                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected 
+                    //Skipping KAR lookups can be set both in requests and config, useful for testing in different environments to see if all banks are responding as expected
                     karResponse = await _karService.GetBanksForCustomer(ssn, fromDateDto, toDateDto, accountInfoRequestId, correlationId, skipKAR || _settings.SkipKAR);
                 }
                 catch (ApiException e)

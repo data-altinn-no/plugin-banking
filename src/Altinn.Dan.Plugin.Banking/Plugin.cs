@@ -356,7 +356,8 @@ namespace Altinn.Dan.Plugin.Banking
             }
             else
             {
-                return String.Empty;
+                _logger.LogCritical("Github retrieval failed for banking endpoints, status code: {StatusCode}, reason: {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
+                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_GITHUB_RETRIEVAL_FAILED, "Banking endpoints are currently unavailable");               
             }
         }
 

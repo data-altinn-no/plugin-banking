@@ -5,6 +5,7 @@ using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using NJsonSchema;
+using Altinn.Dan.Plugin.Banking.Clients.V2;
 
 
 namespace Altinn.Dan.Plugin.Banking
@@ -19,7 +20,7 @@ namespace Altinn.Dan.Plugin.Banking
 
         public static int ERROR_METADATA_LOOKUP_ERROR = 3;
 
-
+        public static int ERROR_GITHUB_RETRIEVAL_FAILED = 4;
         public List<EvidenceCode> GetEvidenceCodes()
         {
             return new List<EvidenceCode>()
@@ -36,7 +37,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = EvidenceValue.SchemaFromObject<BankResponse>(Formatting.Indented)
         }
                     },
                     Parameters = new List<EvidenceParameter>()
@@ -86,7 +87,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = EvidenceValue.SchemaFromObject<BankRelations>(Formatting.Indented)
         }
                     },
                     Parameters = new List<EvidenceParameter>()
@@ -131,8 +132,8 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.None)
-        }
+                            JsonSchemaDefintion = EvidenceValue.SchemaFromObject<BankResponse>(Formatting.Indented)
+                        }
                     },
                     Parameters = new List<EvidenceParameter>()
                     {
@@ -187,7 +188,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<BankResponse>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = EvidenceValue.SchemaFromObject<Transactions>(Formatting.Indented)
         }
                     },
                     Parameters = new List<EvidenceParameter>()
@@ -242,7 +243,7 @@ namespace Altinn.Dan.Plugin.Banking
                         {
                             EvidenceValueName = "default",
                             ValueType = EvidenceValueType.JsonSchema,
-                            JsonSchemaDefintion = JsonSchema.FromType<EndpointsList>().ToJson(Formatting.None)
+                            JsonSchemaDefintion = EvidenceValue.SchemaFromObject<EndpointsList>(Formatting.Indented)
                         }
                     },
                     AuthorizationRequirements = new List<Requirement>()

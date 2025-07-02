@@ -126,11 +126,11 @@ public class BankService(
         }
         catch (Exception e)
         {
-            if (e is ApiException k && k.StatusCode >= 400)
+            if (e is ApiException k)
             {
                 var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
                 var successfulAccounts = await Task.WhenAll(successfulTasks);
-                var faultedAccounts = accounts.Accounts1.Where(x => !successfulAccounts.Any(y => y.Account!.AccountReference == x.AccountReference)).ToList();
+                var faultedAccounts = accounts.Accounts1.Where(x => successfulAccounts.All(y => y.Account!.AccountReference != x.AccountReference)).ToList();
 
                 foreach (var faultedAccount in faultedAccounts)
                 {
@@ -143,7 +143,7 @@ public class BankService(
             }
             else
             {
-                /* 
+                /*
                  * TODO:
                  * Will rethrow if a non-API exception is thrown.
                  */

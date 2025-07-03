@@ -273,7 +273,7 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
             return new Account
             {
                 AccountReference = accRef,
-                AccountIdentifier = "asdasdasd",
+                AccountIdentifier = Guid.NewGuid().ToString(),
                 Type = AccountType.LoanAccount,
                 Status = AccountStatus.Enabled,
                 Servicer = new FinancialInstitution

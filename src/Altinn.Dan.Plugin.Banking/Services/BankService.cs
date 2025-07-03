@@ -130,7 +130,7 @@ public class BankService(
             {
                 var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
                 var successfulAccounts = await Task.WhenAll(successfulTasks);
-                var faultedAccounts = accounts.Accounts1.Where(x => successfulAccounts.All(y => y.Account!.AccountReference != x.AccountReference)).ToList();
+                var faultedAccounts = accounts.Accounts1.Where(x => successfulAccounts.All(y => y.Account!.AccountIdentifier != x.AccountIdentifier)).ToList();
 
                 foreach (var faultedAccount in faultedAccounts)
                 {

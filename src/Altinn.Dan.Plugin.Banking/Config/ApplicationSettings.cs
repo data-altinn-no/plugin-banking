@@ -31,8 +31,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public static string DecryptCert { get; set; }
 
-        public KontoOpplysninger Endpoints { get; set; }
-
         public string ImplementedBanks { get; set; }
 
         public bool SkipKAR { get; set; }
@@ -65,10 +63,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
         public bool UseProxy { get; set; }
 
 
-        public string EndpointsResourceFile { get; set; }
-
-        public bool UseTestEndpoints { get; set; }
-
         public string _jwk
         {
             get; set;
@@ -88,20 +82,8 @@ namespace Altinn.Dan.Plugin.Banking.Config
 
         public string BankScope { get; set; }
 
-        private string _githubPAT { get; set; }
+        public string PluginCode { get; set; }
 
-        public string GithubPATName { get; set; }
-
-        public string GithubPAT
-        {
-            get
-            {
-                return _githubPAT ?? new PluginKeyVault(KeyVaultName).Get(GithubPATName).Result;
-            }
-            set
-            {
-                _githubPAT = value;
-            }
+        public string PluginEnv { get; set; }
         }
-    }
 }

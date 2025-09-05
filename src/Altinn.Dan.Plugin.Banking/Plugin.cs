@@ -8,6 +8,7 @@ using Dan.Common;
 using Dan.Common.Exceptions;
 using Dan.Common.Extensions;
 using Dan.Common.Models;
+using Dan.Common.Services;
 using Dan.Common.Util;
 using FileHelpers;
 using Microsoft.Azure.Functions.Worker;
@@ -35,9 +36,10 @@ namespace Altinn.Dan.Plugin.Banking
         private readonly HttpClient _client;
         private readonly ApplicationSettings _settings;
         private readonly IMemoryCacheProvider _memCache;
+        private readonly IDanPluginClientService _pluginClientService;
         private const string ENDPOINTS_KEY = "endpoints_key";
 
-        public Plugin(IOptions<ApplicationSettings> settings, ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IBankService bankService, IKARService karService, IMemoryCacheProvider memCache)
+        public Plugin(IOptions<ApplicationSettings> settings, ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IBankService bankService, IKARService karService, IMemoryCacheProvider memCache, IDanPluginClientService pluginClientService)
         {
             _bankService = bankService;
             _karService = karService;
@@ -46,6 +48,7 @@ namespace Altinn.Dan.Plugin.Banking
             _settings = settings.Value;
             _logger = loggerFactory.CreateLogger<Plugin>();
             _memCache = memCache;
+            _pluginClientService = pluginClientService;
         }
 
         [Function("Banktransaksjoner")]
@@ -82,28 +85,6 @@ namespace Altinn.Dan.Plugin.Banking
         {
             var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
             return await EvidenceSourceResponse.CreateResponse(req, () => GetKontodetaljer(evidenceHarvesterRequest));
-        }
-
-        [Function("Kontrollinformasjon")]
-        public async Task<HttpResponseData> GetKontrollinformasjon(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
-            FunctionContext context)
-        {
-            var evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
-
-            return await EvidenceSourceResponse.CreateResponse(req, () => GetEvidenceValuesKontrollinformasjon());
-        }
-
-        [Function("OppdaterKontrollinformasjon")]
-        public async Task<HttpResponseData> UpdateKontrollinformasjon(
-            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
-            FunctionContext context)
-        {
-            var endpoints = await ReadEndpointsAndCache();
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new EndpointsList() { Endpoints = endpoints, Total = endpoints.Count });
-            return response;
         }
 
         [Function(Constants.EvidenceSourceMetadataFunctionName)]
@@ -269,21 +250,14 @@ namespace Altinn.Dan.Plugin.Banking
             }
         }
 
-        private async Task<List<EvidenceValue>> GetEvidenceValuesKontrollinformasjon()
-        {
-            var ecb = new EvidenceBuilder(new Metadata(), "Kontrollinformasjon");
-            ecb.AddEvidenceValue("default", JsonConvert.SerializeObject(await GetBankEndpoints()), "BITS", false);
-
-            return ecb.GetEvidenceValues();
-        }
-
         private async Task<List<EndpointExternal>> GetBankEndpoints()
         {
             (bool hasCachedValue, var endpoints) = await _memCache.TryGetEndpoints(ENDPOINTS_KEY);
 
             if (!hasCachedValue)
             {
-                endpoints = await ReadEndpointsAndCache();
+                endpoints = await GetEndpointsFromBitsPlugin();
+                await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(300));
             }
 
             return endpoints;
@@ -312,54 +286,15 @@ namespace Altinn.Dan.Plugin.Banking
             return bankConfigs;
         }
 
+        private async Task<List<EndpointExternal>> GetEndpointsFromBitsPlugin()
+        {
+            var endpoints = await _pluginClientService.GetPluginDataSetAsync<List<EndpointExternal>>(new EvidenceHarvesterRequest() { EvidenceCodeName = "Kontrollinformasjon" }, _settings.PluginCode, _settings.PluginEnv, true, "", "bits");
+
+            return endpoints;
+        }
+
         private BankConfig CreateBankConfigurations(EndpointExternal bank)
             => CreateBankConfigurations([bank]).Single().Value;
-
-        private async Task<List<EndpointExternal>> ReadEndpointsAndCache()
-        {
-            var file = await GetFileFromGithub();
-            // var file = Encoding.UTF8.GetString(bytes,0, bytes.Length);
-
-            var engine = new DelimitedFileEngine<EndpointV2>(Encoding.UTF8);
-            var endpoints = engine.ReadString(file).ToList();
-
-            List<EndpointExternal> result = new List<EndpointExternal>();
-            _logger.LogInformation($"Endpoints parsed from csv - {engine.TotalRecords} to be cached");
-
-            if (engine.TotalRecords > 0 && endpoints.Count > 0)
-            {
-                result = await _memCache.SetEndpointsCache(ENDPOINTS_KEY, endpoints, TimeSpan.FromMinutes(300));
-                _logger.LogInformation($"Cache refresh completed - total of {engine.TotalRecords} cached");
-            }
-            else
-            {
-                _logger.LogCritical($"Plugin func-es-banking no endpoints found in csv!!!");
-            }
-
-            return result;
-        }
-
-        private async Task<string> GetFileFromGithub()
-        {
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _settings.GithubPAT);
-            _client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-            _client.DefaultRequestHeaders.UserAgent.ParseAdd("plugin-banking"); // GitHub requires a User-Agent header
-
-            // Make the GET request
-            var url = $"https://api.github.com/repos/data-altinn-no/bits/contents/{_settings.EndpointsResourceFile}";
-            HttpResponseMessage response = await _client.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                _logger.LogCritical("Github retrieval failed for banking endpoints, status code: {StatusCode}, reason: {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
-                throw new EvidenceSourceTransientException(Banking.Metadata.ERROR_GITHUB_RETRIEVAL_FAILED, "Banking endpoints are currently unavailable");               
-            }
-        }
 
         private async Task<List<EvidenceValue>> GetEvidenceValuesBankTransaksjoner(EvidenceHarvesterRequest evidenceHarvesterRequest)
         {

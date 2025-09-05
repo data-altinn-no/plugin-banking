@@ -4,6 +4,7 @@ using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Services;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
 using Dan.Common.Extensions;
+using Dan.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -20,6 +21,7 @@ var host = new HostBuilder()
         services.AddSingleton<IMemoryCacheProvider, MemoryCacheProvider>();
         services.AddTransient<IBankService, BankService>();
         services.AddTransient<IKARService, KARService>();
+        services.AddTransient<IDanPluginClientService, DanPluginClientService>();
 
     })
     .Build();

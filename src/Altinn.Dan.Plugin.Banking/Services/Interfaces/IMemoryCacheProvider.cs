@@ -9,6 +9,6 @@ namespace Altinn.Dan.Plugin.Banking.Services.Interfaces
     {
         public Task<(bool success, List<EndpointExternal> result)> TryGetEndpoints(string key);
 
-        public Task<List<EndpointExternal>> SetEndpointsCache(string key, List<EndpointV2> value, TimeSpan timeToLive);
+        public Task<List<EndpointExternal>> SetEndpointsCache(string key, List<EndpointExternal> value, TimeSpan timeToLive);
     }
 }

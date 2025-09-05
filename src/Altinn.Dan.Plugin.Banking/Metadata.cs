@@ -232,7 +232,7 @@ namespace Altinn.Dan.Plugin.Banking
                         }
                     }
                 },
-                new EvidenceCode()
+               /* new EvidenceCode()
                 {
                     EvidenceCodeName = "Kontrollinformasjon",
                     EvidenceSource = SOURCE,
@@ -253,7 +253,7 @@ namespace Altinn.Dan.Plugin.Banking
                             RequiredScopes = new List<string>(){"altinn:dataaltinnno/kontrollinformasjon"}
                         }
                     }
-                }
+                } */
            };
         }
     }

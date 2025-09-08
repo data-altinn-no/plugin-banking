@@ -12,13 +12,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
 using Bank_v2 = Altinn.Dan.Plugin.Banking.Clients.V2;
 
 namespace Altinn.Dan.Plugin.Banking.Services;
-public class BankService(
+public partial class BankService(
     ILoggerFactory loggerFactory,
     IMaskinportenService maskinportenService,
     IOptions<ApplicationSettings> applicationSettings)
@@ -223,6 +224,21 @@ public class BankService(
                     bank.Name, account.AccountReference, primaryOwnerNin, accountInfoRequestId, correlationIdDetails);
 
         _logger.LogInformation("Fra: {FromDate} Til: {EndDate}", bankMetadataParams.FromDate, bankMetadataParams.ToDate);
+        if (DataNotDeliveredRegex().Match(account.AccountReference).Success)
+        {
+            _logger.LogInformation("Data not delivered for account: bank {BankName} dob {DateOfBirth} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
+                bank.Name, primaryOwnerNin, accountInfoRequestId, correlationIdDetails);
+            return new AccountDetails
+            {
+                ResponseDetails = new ResponseDetails
+                {
+                    Message = "Data not delivered for account",
+                    Status = ResponseDetailsStatus.Partial
+                },
+                Account = null
+            };
+        }
+
         var detailsTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountDetailsRequestTimeoutSecs));
         var details = await bankClient.ShowAccountByIdAsync(account.AccountReference, accountInfoRequestId,
             correlationIdDetails, PluginConstants.LegalMandate, null, null, null, bankMetadataParams.FromDate, bankMetadataParams.ToDate, detailsTimeout.Token);
@@ -345,6 +361,9 @@ public class BankService(
 
         return transactions;
     }
+
+    [GeneratedRegex(@"(?i)\bdataNotDelivered\b", RegexOptions.None, "en-GB")]
+    private static partial Regex DataNotDeliveredRegex();
 }
 
 public class BankConfig

@@ -31,6 +31,8 @@ public partial class BankService(
     private const int AccountDetailsRequestTimeoutSecs = 30;
     private const int AccountListRequestTimeoutSecs = 30;
 
+    private const string DataNotDeliveredMessage = "Data not delivered for account";
+
     public async Task<BankResponse> GetAccounts(string ssn, Dictionary<string, BankConfig> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
     {
         BankResponse bankResponse = new BankResponse { BankAccounts = [] };
@@ -131,6 +133,7 @@ public partial class BankService(
             {
                 var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
                 var successfulAccounts = await Task.WhenAll(successfulTasks);
+                successfulAccounts = successfulAccounts.Where(a => a.ResponseDetails?.Message != DataNotDeliveredMessage).ToArray();
                 var faultedAccounts = accounts.Accounts1.Where(x => successfulAccounts.All(y => y.Account!.AccountIdentifier != x.AccountIdentifier)).ToList();
 
                 foreach (var faultedAccount in faultedAccounts)
@@ -232,7 +235,7 @@ public partial class BankService(
             {
                 ResponseDetails = new ResponseDetails
                 {
-                    Message = "Data not delivered for account",
+                    Message = DataNotDeliveredMessage,
                     Status = ResponseDetailsStatus.Partial
                 },
                 Account = null

@@ -124,6 +124,19 @@ public partial class BankService(
         try
         {
             AccountDetails[] accountsDetails = await results;
+            var dataNotDeliveredAccountsIdentifiers = accountsDetails
+                .Where(a => a.ResponseDetails?.Message == DataNotDeliveredMessage)
+                .Select(a => a.Account?.AccountIdentifier)
+                .ToList();
+            if (dataNotDeliveredAccountsIdentifiers.Count > 0)
+            {
+                accountsDetails = accountsDetails.Where(a => !dataNotDeliveredAccountsIdentifiers.Contains(a.Account?.AccountIdentifier)).ToArray();
+                var faultedAccounts = accounts.Accounts1.Where(a => dataNotDeliveredAccountsIdentifiers.Contains(a.AccountIdentifier)).ToArray();
+                foreach (var faultedAccount in faultedAccounts)
+                {
+                    bankInfo.Accounts.Add(faultedAccount.ToDefaultDto());
+                }
+            }
             var mappedAccounts = await MapAccountsToInternal(accountsDetails, bankClient, accounts, bankMetadataParams);
             bankInfo.Accounts.AddRange(mappedAccounts);
         }
@@ -238,7 +251,11 @@ public partial class BankService(
                     Message = DataNotDeliveredMessage,
                     Status = ResponseDetailsStatus.Partial
                 },
-                Account = null
+                Account = new AccountDetail
+                {
+                    AccountIdentifier = account.AccountIdentifier,
+                    AccountReference = account.AccountReference
+                }
             };
         }
 

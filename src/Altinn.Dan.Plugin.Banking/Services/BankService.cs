@@ -12,13 +12,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AccountDtoV2 = Altinn.Dan.Plugin.Banking.Models.AccountV2;
 using Bank_v2 = Altinn.Dan.Plugin.Banking.Clients.V2;
 
 namespace Altinn.Dan.Plugin.Banking.Services;
-public class BankService(
+public partial class BankService(
     ILoggerFactory loggerFactory,
     IMaskinportenService maskinportenService,
     IOptions<ApplicationSettings> applicationSettings)
@@ -29,6 +30,8 @@ public class BankService(
     private const int TransactionRequestTimeoutSecs = 30;
     private const int AccountDetailsRequestTimeoutSecs = 30;
     private const int AccountListRequestTimeoutSecs = 30;
+
+    private const string DataNotDeliveredMessage = "Data not delivered for account";
 
     public async Task<BankResponse> GetAccounts(string ssn, Dictionary<string, BankConfig> bankList, DateTimeOffset? fromDate, DateTimeOffset? toDate, Guid accountInfoRequestId, bool includeTransactions = true)
     {
@@ -121,6 +124,19 @@ public class BankService(
         try
         {
             AccountDetails[] accountsDetails = await results;
+            var dataNotDeliveredAccountsIdentifiers = accountsDetails
+                .Where(a => a.ResponseDetails?.Message == DataNotDeliveredMessage)
+                .Select(a => a.Account?.AccountIdentifier)
+                .ToList();
+            if (dataNotDeliveredAccountsIdentifiers.Count > 0)
+            {
+                accountsDetails = accountsDetails.Where(a => !dataNotDeliveredAccountsIdentifiers.Contains(a.Account?.AccountIdentifier)).ToArray();
+                var faultedAccounts = accounts.Accounts1.Where(a => dataNotDeliveredAccountsIdentifiers.Contains(a.AccountIdentifier)).ToArray();
+                foreach (var faultedAccount in faultedAccounts)
+                {
+                    bankInfo.Accounts.Add(faultedAccount.ToDefaultDto());
+                }
+            }
             var mappedAccounts = await MapAccountsToInternal(accountsDetails, bankClient, accounts, bankMetadataParams);
             bankInfo.Accounts.AddRange(mappedAccounts);
         }
@@ -130,6 +146,7 @@ public class BankService(
             {
                 var successfulTasks = accountsDetailsTasks.Where(x => x.IsCompletedSuccessfully).ToArray();
                 var successfulAccounts = await Task.WhenAll(successfulTasks);
+                successfulAccounts = successfulAccounts.Where(a => a.ResponseDetails?.Message != DataNotDeliveredMessage).ToArray();
                 var faultedAccounts = accounts.Accounts1.Where(x => successfulAccounts.All(y => y.Account!.AccountIdentifier != x.AccountIdentifier)).ToList();
 
                 foreach (var faultedAccount in faultedAccounts)
@@ -223,6 +240,25 @@ public class BankService(
                     bank.Name, account.AccountReference, primaryOwnerNin, accountInfoRequestId, correlationIdDetails);
 
         _logger.LogInformation("Fra: {FromDate} Til: {EndDate}", bankMetadataParams.FromDate, bankMetadataParams.ToDate);
+        if (DataNotDeliveredRegex().Match(account.AccountReference).Success)
+        {
+            _logger.LogInformation("Data not delivered for account: bank {BankName} dob {DateOfBirth} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
+                bank.Name, primaryOwnerNin, accountInfoRequestId, correlationIdDetails);
+            return new AccountDetails
+            {
+                ResponseDetails = new ResponseDetails
+                {
+                    Message = DataNotDeliveredMessage,
+                    Status = ResponseDetailsStatus.Partial
+                },
+                Account = new AccountDetail
+                {
+                    AccountIdentifier = account.AccountIdentifier,
+                    AccountReference = account.AccountReference
+                }
+            };
+        }
+
         var detailsTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(AccountDetailsRequestTimeoutSecs));
         var details = await bankClient.ShowAccountByIdAsync(account.AccountReference, accountInfoRequestId,
             correlationIdDetails, PluginConstants.LegalMandate, null, null, null, bankMetadataParams.FromDate, bankMetadataParams.ToDate, detailsTimeout.Token);
@@ -345,6 +381,9 @@ public class BankService(
 
         return transactions;
     }
+
+    [GeneratedRegex(@"(?i)\bdataNotDelivered\b", RegexOptions.None, "en-GB")]
+    private static partial Regex DataNotDeliveredRegex();
 }
 
 public class BankConfig

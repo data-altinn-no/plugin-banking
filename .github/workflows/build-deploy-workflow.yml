@@ -10,6 +10,9 @@ on:
 
 jobs:
  run:
+  permissions:
+    actions: read
+    contents: read
   uses: data-altinn-no/deploy-actions/.github/workflows/dan-deploy-flow.yml@e9a1d62778d9d2f4e8c2245027fb2750fd230e0a
   with:
     artifact_name: 'dan-plugin-banking' # Can be omitted, defaults to 'artifact'

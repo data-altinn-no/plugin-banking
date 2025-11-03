@@ -10,13 +10,16 @@ on:
 
 jobs:
  run:
-   uses: data-altinn-no/deploy-actions/.github/workflows/dan-deploy-flow.yml@main
-   with:
-     artifact_name: 'dan-plugin-banking' # Can be omitted, defaults to 'artifact'
-     function_project_path: 'src/Altinn.Dan.Plugin.Banking'
-   secrets:
-     function_app_name: ${{ secrets.FUNCTIONAPP_NAME }}
-     publish_profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_CREDS }}
-     azure_artifact_pat: ${{ secrets.AZURE_ARTIFACTS_PAT }}
-     azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
-     resource_group_prod: ${{ secrets.RESOURCE_GROUP_PROD }}
+  permissions:
+    actions: read
+    contents: read
+  uses: data-altinn-no/deploy-actions/.github/workflows/dan-deploy-flow.yml@e9a1d62778d9d2f4e8c2245027fb2750fd230e0a
+  with:
+    artifact_name: 'dan-plugin-banking' # Can be omitted, defaults to 'artifact'
+    function_project_path: 'src/Altinn.Dan.Plugin.Banking'
+  secrets:
+    function_app_name: ${{ secrets.FUNCTIONAPP_NAME }}
+    publish_profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_CREDS }}
+    azure_artifact_pat: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+    azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+    resource_group_prod: ${{ secrets.RESOURCE_GROUP_PROD }}

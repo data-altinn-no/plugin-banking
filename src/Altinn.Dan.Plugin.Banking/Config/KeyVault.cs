@@ -19,7 +19,8 @@ public class PluginKeyVault
     /// <param name="vaultName">Name of the Key Vault</param>
     public PluginKeyVault(string vaultName)
     {
-        SecretClient = new SecretClient(new Uri($"https://{vaultName}.vault.azure.net/"), new DefaultAzureCredential());
+        var creds = new DefaultAzureCredential();
+        SecretClient = new SecretClient(new Uri($"https://{vaultName}.vault.azure.net/"), creds);
     }
 
     /// <summary>

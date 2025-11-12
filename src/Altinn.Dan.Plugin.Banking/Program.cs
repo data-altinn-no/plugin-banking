@@ -23,10 +23,6 @@ var host = new HostBuilder()
         services.AddTransient<IBankService, BankService>();
         services.AddTransient<IKARService, KARService>();
         services.AddTransient<IDanPluginClientService, DanPluginClientService>();
-
-        // Temp fix, will need to update common
-        DefaultAzureCredential credentials = new();
-        services.AddSingleton(credentials);
     })
     .Build();
 

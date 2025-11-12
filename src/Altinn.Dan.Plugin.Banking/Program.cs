@@ -3,6 +3,7 @@ using Altinn.ApiClients.Maskinporten.Services;
 using Altinn.Dan.Plugin.Banking.Config;
 using Altinn.Dan.Plugin.Banking.Services;
 using Altinn.Dan.Plugin.Banking.Services.Interfaces;
+using Azure.Identity;
 using Dan.Common.Extensions;
 using Dan.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,9 @@ var host = new HostBuilder()
         services.AddTransient<IKARService, KARService>();
         services.AddTransient<IDanPluginClientService, DanPluginClientService>();
 
+        // Temp fix, will need to update common
+        DefaultAzureCredential credentials = new();
+        services.AddSingleton(credentials);
     })
     .Build();
 

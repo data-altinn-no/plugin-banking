@@ -45,7 +45,7 @@ public class KARService : IKARService
             BaseUrl = _settings.KarUrl
         };
 
-        var token = await _maskinportenService.GetToken(_settings.Jwk, _settings.MaskinportenEnvironment,
+        var token = await _maskinportenService.GetToken(_settings.Certificate, _settings.MaskinportenEnvironment,
             _settings.ClientId, "bits:kundeforhold", null);
 
         var karTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(KarRequestTimeoutSecs));

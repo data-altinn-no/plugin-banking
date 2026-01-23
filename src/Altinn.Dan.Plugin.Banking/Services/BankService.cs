@@ -94,7 +94,7 @@ public partial class BankService(
         var fromDate = bankMetadata.FromDate;
         var toDate = bankMetadata.ToDate;
 
-        var token = await maskinportenService.GetToken(_settings.Jwk, bank.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bank.BankAudience);
+        var token = await maskinportenService.GetToken(_settings.Certificate, bank.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bank.BankAudience);
         bank.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
         var bankClient = new Bank_v2.Bank_v2(bank.Client, _settings)
@@ -349,7 +349,7 @@ public partial class BankService(
         _logger.LogInformation("Getting transactions: bank {BankName} accountrefence {AccountReference} dob {DateOfBirth} accountinforequestid {AccountInfoRequestId} correlationid {CorrelationId}",
             bankConfig.Name, accountReference, ssn[..6], accountInfoRequestId, correlationId);
 
-        var token = await maskinportenService.GetToken(_settings.Jwk, bankConfig.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bankConfig.BankAudience);
+        var token = await maskinportenService.GetToken(_settings.Certificate, bankConfig.MaskinportenEnv, _settings.ClientId, _settings.BankScope, bankConfig.BankAudience);
 
         bankConfig.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 

@@ -4,6 +4,10 @@
 // </auto-generated>
 //----------------------
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using Altinn.Dan.Plugin.Banking.Config;
 
 #pragma warning disable 108 // Disable "CS0108 '{derivedDto}.ToJson()' hides inherited member '{dtoBase}.ToJson()'. Use the new keyword if hiding was intended."
@@ -535,192 +539,291 @@ namespace Altinn.Dan.Plugin.Banking.Clients.V2
         /// <param name="toDate">To date, current date if not stated</param>
         /// <returns>Valid response - A list of transactions - Not encrypted response in test (json), but encrypted response according to JWE compact serialization in production (jose)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(string accountReference, System.Guid accountInfoRequestID, System.Guid correlationID, string legal_Mandate, string? additionalReferenceID, AdditionalReferenceIDType3? additionalReferenceIDType, string? requesterID, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Transactions> ListTransactionsAsync(
+            string accountReference,
+            System.Guid accountInfoRequestID,
+            System.Guid correlationID,
+            string legal_Mandate,
+            string? additionalReferenceID,
+            AdditionalReferenceIDType3? additionalReferenceIDType,
+            string? requesterID,
+            System.DateTimeOffset? fromDate,
+            System.DateTimeOffset? toDate,
+            System.Threading.CancellationToken cancellationToken)
         {
             if (accountReference == null)
+            {
                 throw new System.ArgumentNullException("accountReference");
+            }
 
-            var client_ = _httpClient;
-            var disposeClient_ = false;
+            List<Transaction> transactions = [];
+            Transactions? firstTransaction = null;
+            string? url = null;
+            do
+            {
+                // CorrelationID needs to be unique per request for the banks. So if url is not null, means we're
+                // doing pagination and need to make a new one
+                if (url != null)
+                {
+                    correlationID = System.Guid.NewGuid();
+                }
+                var headers = GetTransactionHeaders(accountReference, accountInfoRequestID, correlationID, legal_Mandate, additionalReferenceID, additionalReferenceIDType, requesterID);
+                var request = new System.Net.Http.HttpRequestMessage();
+                foreach(var header in headers)
+                {
+                    request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+                request.Method = new System.Net.Http.HttpMethod("GET");
+                request.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
+
+                var urlBuilder = GetTransactionUrlBuilder(accountReference, fromDate, toDate, url);
+
+                var client = _httpClient;
+
+                PrepareRequest(client, request, urlBuilder);
+
+                url = urlBuilder.ToString();
+                request.RequestUri = new System.Uri(url, System.UriKind.RelativeOrAbsolute);
+
+                PrepareRequest(client, request, url);
+
+                var response = await client
+                    .SendAsync(request, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ProcessResponse(client, response);
+
+                var responseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                foreach (var item_ in response.Headers)
+                {
+                    responseHeaders[item_.Key] = item_.Value;
+                }
+                if (response.Content != null && response.Content.Headers != null)
+                {
+                    foreach (var item_ in response.Content.Headers)
+                        responseHeaders[item_.Key] = item_.Value;
+                }
+
+                var transactionResponse = await GetTransactionResponseValue(response, responseHeaders, correlationID, cancellationToken);
+                if (firstTransaction == null)
+                {
+                    firstTransaction = transactionResponse;
+                }
+                transactions.AddRange(transactionResponse.Transactions1 ?? []);
+
+                if (transactionResponse.Links != null &&
+                    transactionResponse.Links.Any(l =>
+                        l.Rel.Equals("next", System.StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    var next = transactionResponse.Links.First(l =>
+                        l.Rel.Equals("next", System.StringComparison.InvariantCultureIgnoreCase));
+                    url = next.Href;
+                }
+                else
+                {
+                    url = null;
+                }
+            } while (url != null);
+
+            firstTransaction.Transactions1 = transactions;
+            return firstTransaction;
+        }
+
+        private Dictionary<string, string> GetTransactionHeaders(
+            string accountReference,
+            System.Guid accountInfoRequestID,
+            System.Guid correlationID,
+            string legal_Mandate,
+            string? additionalReferenceID,
+            AdditionalReferenceIDType3? additionalReferenceIDType,
+            string? requesterID)
+        {
+            var headers = new Dictionary<string, string>();
+            if (accountInfoRequestID == null)
+            {
+                throw new System.ArgumentNullException("accountInfoRequestID");
+            }
+            headers.Add("AccountInfoRequestID", ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
+
+            if (correlationID == null)
+            {
+                throw new System.ArgumentNullException("correlationID");
+            }
+            headers.Add("CorrelationID", ConvertToString(correlationID, System.Globalization.CultureInfo.InvariantCulture));
+
+            if (legal_Mandate == null)
+            {
+                throw new System.ArgumentNullException("legal_Mandate");
+            }
+            headers.Add("Legal-Mandate", ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
+
+            if (additionalReferenceID != null)
+            {
+                headers.Add("AdditionalReferenceID", ConvertToString(additionalReferenceID, System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            if (additionalReferenceIDType != null)
+            {
+                headers.Add("AdditionalReferenceIDType", ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            if (requesterID != null)
+            {
+                headers.Add("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            return headers;
+        }
+
+        private System.Text.StringBuilder GetTransactionUrlBuilder(string accountReference, System.DateTimeOffset? fromDate, System.DateTimeOffset? toDate, string? existingUrl)
+        {
+            var urlBuilder = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder.Append(_baseUrl);
+
+            if (existingUrl != null)
+            {
+                if (existingUrl.StartsWith('/'))
+                {
+                    existingUrl = existingUrl.TrimStart('/');
+                }
+                urlBuilder.Append(existingUrl);
+                return urlBuilder;
+            }
+
+            urlBuilder.Append("accounts/");
+            urlBuilder.Append(System.Uri.EscapeDataString(ConvertToString(accountReference, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder.Append("/transactions");
+            urlBuilder.Append('?');
+            if (fromDate != null)
+            {
+                urlBuilder.Append(System.Uri.EscapeDataString("fromDate")).Append('=').Append(System.Uri.EscapeDataString(fromDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+            }
+            if (toDate != null)
+            {
+                urlBuilder.Append(System.Uri.EscapeDataString("toDate")).Append('=').Append(System.Uri.EscapeDataString(toDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+            }
+            urlBuilder.Length--;
+
+            return urlBuilder;
+        }
+
+        private async System.Threading.Tasks.Task<Transactions> GetTransactionResponseValue(
+            HttpResponseMessage response_,
+            Dictionary<string, IEnumerable<string>> headers_,
+            System.Guid correlationID,
+            CancellationToken cancellationToken)
+        {
+
+            var disposeResponse_ = true;
             try
             {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                var status_ = (int)response_.StatusCode;
+                if (status_ == 200)
                 {
-
-                    if (accountInfoRequestID == null)
-                        throw new System.ArgumentNullException("accountInfoRequestID");
-                    request_.Headers.TryAddWithoutValidation("AccountInfoRequestID", ConvertToString(accountInfoRequestID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (correlationID == null)
-                        throw new System.ArgumentNullException("correlationID");
-                    request_.Headers.TryAddWithoutValidation("CorrelationID", ConvertToString(correlationID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (legal_Mandate == null)
-                        throw new System.ArgumentNullException("legal_Mandate");
-                    request_.Headers.TryAddWithoutValidation("Legal-Mandate", ConvertToString(legal_Mandate, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (additionalReferenceID != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceID", ConvertToString(additionalReferenceID, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (additionalReferenceIDType != null)
-                        request_.Headers.TryAddWithoutValidation("AdditionalReferenceIDType", ConvertToString(additionalReferenceIDType, System.Globalization.CultureInfo.InvariantCulture));
-
-                    if (requesterID != null)
-                        request_.Headers.TryAddWithoutValidation("RequesterID", ConvertToString(requesterID, System.Globalization.CultureInfo.InvariantCulture));
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/jose"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "accounts/{accountReference}/transactions"
-                    urlBuilder_.Append("accounts/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(accountReference, System.Globalization.CultureInfo.InvariantCulture)));
-                    urlBuilder_.Append("/transactions");
-                    urlBuilder_.Append('?');
-                    if (fromDate != null)
+                    var test = await response_.Content!.ReadAsStringAsync();
+                    var objectResponse_ = await ReadObjectResponseAsync<Transactions>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    var transactionObject = objectResponse_.Object;
+                    if (transactionObject== null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("fromDate")).Append('=').Append(System.Uri.EscapeDataString(fromDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                     }
-                    if (toDate != null)
+
+                    return objectResponse_.Object;
+                }
+                else
+                if (status_ == 400)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("toDate")).Append('=').Append(System.Uri.EscapeDataString(toDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                     }
-                    urlBuilder_.Length--;
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
+                    throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 401)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
                     {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var test = await response_.Content!.ReadAsStringAsync();
-                            var objectResponse_ = await ReadObjectResponseAsync<Transactions>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error400>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error400>("ACC-001 and best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error401>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 405)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 406)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 429)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
-                        else
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
-                            }
-                            throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
-                        }
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                     }
-                    finally
+                    throw new ApiException<Error401>("ACC-010 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 403)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error403>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
                     {
-                        if (disposeResponse_)
-                            response_.Dispose();
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
                     }
+                    throw new ApiException<Error403>("ACC-011 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 404)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error404>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error404>("ACC-002 or ACC-003 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 405)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error405>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error405>("ACC-012 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 406)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error406>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error406>("ACC-013 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 429)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error429>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error429>("ACC-022 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                if (status_ == 500)
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error500>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error500>("ACC-100 or ACC-500 and the best possible description of the error from Data Provider. See information regarding specific error situations on github under API-specification for the different ACC codes.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
+                }
+                else
+                {
+                    var objectResponse_ = await ReadObjectResponseAsync<Error>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                    if (objectResponse_.Object == null)
+                    {
+                        throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null, correlationID.ToString());
+                    }
+                    throw new ApiException<Error>("Best possible description of the error from Data Provider", status_, objectResponse_.Text, headers_, objectResponse_.Object, null, correlationID.ToString());
                 }
             }
             finally
             {
-                if (disposeClient_)
-                    client_.Dispose();
+                if (disposeResponse_)
+                    response_.Dispose();
             }
         }
 

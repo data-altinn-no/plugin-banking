@@ -43,9 +43,12 @@ namespace Altinn.Dan.Plugin.Banking.Test.Services
                 BaseAddress = new Uri("http://test.com")
             };
 
-            A.CallTo(() => _fakeMpService.GetToken(A<string>._, A<string>._, A<string>._, A<string>._, A<string>._, A<string>._, A<bool>._)).Returns(new TokenResponse { AccessToken = "321" });
             _certificate = CertificateGenerator.GenerateSelfSignedCertificate();
-            A.CallTo(() => _fakeOptions.Value).Returns(new ApplicationSettings { Jwk = "321", ClientId = "54345", BankScope = "somescope", OedDecryptCert = _certificate });
+            A.CallTo(() => _fakeOptions.Value)
+             .Returns(new ApplicationSettings { ClientId = "54345", BankScope = "somescope", OedDecryptCert = _certificate, Certificate = _certificate});
+
+            A.CallTo(() => _fakeMpService.GetToken(A<X509Certificate2>._, A<string>._, A<string>._, A<string>._, A<string>._, A<string>._, A<bool>._))
+             .Returns(new TokenResponse { AccessToken = "321" });
         }
 
         [TestMethod]

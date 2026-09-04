@@ -61,7 +61,7 @@ public partial class BankService(
 
                     // Some exception messages related to deserialisation can include a raw string that includes ssn
                     // replace all instances of ssn with masked version. 
-                    var maskedSsn = $"{ssn[..6]}***";
+                    var maskedSsn = $"{ssn[..6]}*****";
                     var exceptionMessage = e.Message.Replace(ssn, maskedSsn);
                     innerExceptionMsg = innerExceptionMsg.Replace(ssn, maskedSsn);
                     _logger.LogError(

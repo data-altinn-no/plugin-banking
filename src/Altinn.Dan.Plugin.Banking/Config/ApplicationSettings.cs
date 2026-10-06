@@ -9,8 +9,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
         private static X509Certificate2 _altinnCertificate;
         private static X509Certificate2 _oedDecryptCert;
 
-        public static string BankingJwkName { get; set; }
-
         public ApplicationSettings()
         {
             ApplicationConfig = this;
@@ -61,24 +59,6 @@ namespace Altinn.Dan.Plugin.Banking.Config
         public string ProxyUrl { get; set; }
 
         public bool UseProxy { get; set; }
-
-
-        public string _jwk
-        {
-            get; set;
-        }
-
-        public string Jwk
-        {
-            get
-            {
-                return _jwk ?? new PluginKeyVault(KeyVaultName).Get(BankingJwkName).Result;
-            }
-            set
-            {
-                _jwk = value;
-            }
-        }
 
         public string BankScope { get; set; }
 

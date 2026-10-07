@@ -13,7 +13,6 @@ var host = new HostBuilder()
     .ConfigureDanPluginDefaults()
     .ConfigureServices((context, services) =>
     {
-        services.AddHttpClient();
         services.Configure<ApplicationSettings>(context.Configuration);
 
         services.AddMemoryCache();

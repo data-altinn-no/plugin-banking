@@ -58,9 +58,15 @@ public partial class BankService(
                         correlationId = k.CorrelationId;
                         innerExceptionMsg = k.InnerException?.Message ?? string.Empty;
                     }
+
+                    // Some exception messages related to deserialisation can include a raw string that includes ssn
+                    // replace all instances of ssn with masked version. 
+                    var maskedSsn = $"{ssn[..6]}*****";
+                    var exceptionMessage = e.Message.Replace(ssn, maskedSsn);
+                    innerExceptionMsg = innerExceptionMsg.Replace(ssn, maskedSsn);
                     _logger.LogError(
                         "Bank failed while processing bank {Bank} ({OrgNo}) for {Subject}, error {Error}, accountInfoRequestId: {AccountInfoRequestId}, CorrelationId: {CorrelationId}, source: {source}, innerExceptionMessage: {innerExceptionMessage}",
-                         bank.Value.Name, bank.Value.OrgNo, ssn[..6], e.Message, accountInfoRequestId, correlationId, e.Source, innerExceptionMsg);
+                         bank.Value.Name, bank.Value.OrgNo, ssn[..6], exceptionMessage, accountInfoRequestId, correlationId, e.Source, innerExceptionMsg);
                 }
 
                 bankInfo.BankName = bank.Value.Name;
